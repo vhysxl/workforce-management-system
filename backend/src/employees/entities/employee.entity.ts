@@ -43,6 +43,9 @@ export class Employee {
   @Column({ select: false })
   password_hash: string;
 
+  @Column({ type: 'varchar', length: 255, nullable: true, select: false })
+  refresh_token_hash: string | null;
+
   @Column({ type: 'text', nullable: true })
   address: string | null;
 

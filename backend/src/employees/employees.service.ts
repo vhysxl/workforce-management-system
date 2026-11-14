@@ -36,6 +36,21 @@ export class EmployeesService {
     return employee;
   }
 
+  async findByEmailWithPassword(email: string): Promise<Employee | null> {
+    const employee = await this.employeesRepository.findOne({
+      where: { email: email },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        full_name: true,
+        password_hash: true,
+      },
+    });
+
+    return employee;
+  }
+
   // update(id: number, updateEmployeeDto: UpdateEmployeeDto) {
   //   return `This action updates a #${id} employee`;
   // }
