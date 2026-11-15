@@ -5,6 +5,8 @@ export const ERROR_MESSAGES = {
     DEACTIVATED: 'Employee account is deactivated',
   },
   AUTH: {
+    MISSING_ACCESS_TOKEN: 'Access token is missing',
+    INVALID_ACCESS_TOKEN: 'Invalid or expired access token',
     INVALID_ACTIVATION_TOKEN: 'Invalid or expired activation token',
     INVALID_RESET_PASSWORD_TOKEN: 'Invalid or expired reset password token',
     ACCOUNT_ALREADY_ACTIVATED: 'Account already activated',
