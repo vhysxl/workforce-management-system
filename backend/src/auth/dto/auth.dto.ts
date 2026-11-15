@@ -1,4 +1,10 @@
-import { IsEmail, IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  IsStrongPassword,
+  MaxLength,
+} from 'class-validator';
 
 import { ToLowerCaseTrim } from '../../common/decorators/to-lower-case.decorator.js';
 
@@ -11,6 +17,23 @@ export class LoginDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
+  password: string;
+}
+
+export class ActivateAccountDto {
+  @IsString()
+  @IsNotEmpty()
+  token: string;
+
+  @IsString()
+  @MaxLength(255)
+  @IsStrongPassword({
+    minLength: 8,
+    minNumbers: 1,
+    minSymbols: 1,
+    minUppercase: 1,
+    minLowercase: 1,
+  })
   password: string;
 }
 
