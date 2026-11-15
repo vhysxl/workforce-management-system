@@ -15,7 +15,7 @@ import { UpdateEmployeeDto } from './dto/update-employee.dto.js';
 import {
   ActivationToken,
   ActivationTokenPurpose,
-} from './entities/activation_token.entities.js';
+} from './entities/activation-token.entities.js';
 import { Employee } from './entities/employee.entity.js';
 
 @Injectable()
@@ -67,7 +67,10 @@ export class EmployeesService {
   async issueActivationToken(
     employeeId: string,
   ): Promise<{ raw_token: string }> {
-    return this.issueToken(employeeId, ActivationTokenPurpose.ACTIVATION_ACCOUNT);
+    return this.issueToken(
+      employeeId,
+      ActivationTokenPurpose.ACTIVATION_ACCOUNT,
+    );
   }
 
   async issueResetPasswordToken(
