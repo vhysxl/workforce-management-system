@@ -10,7 +10,7 @@ import { Repository } from 'typeorm';
 import { ERROR_MESSAGES } from '../common/constants/error-messages.constant.js';
 import { EmployeesService } from '../employees/employees.service.js';
 import { Employee } from '../employees/entities/employee.entity.js';
-import { LoginDto, RefreshTokenDto } from './dto/auth.dto.js';
+import { LoginDto } from './dto/auth.dto.js';
 
 @Injectable()
 export class AuthService {
@@ -52,11 +52,17 @@ export class AuthService {
     );
   }
 
-  private async generateTokenPair(employee: Employee) {
+  private async generateTokenPair(employee: Employee): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    refreshExpiredAt: Date;
+  }> {
     const [accessToken, refreshToken] = await Promise.all([
       this.signAccessToken(employee),
       this.signRefreshToken(employee),
     ]);
+
+    const { exp } = this.jwt.decode<{ exp: number }>(refreshToken);
 
     const hashedRefreshToken = await argon2.hash(refreshToken);
     await this.employeeRepository.update(
@@ -69,6 +75,7 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
+      refreshExpiredAt: new Date(exp * 1000),
     };
   }
 
@@ -92,10 +99,10 @@ export class AuthService {
     return this.generateTokenPair(employee);
   }
 
-  async refresh(dto: RefreshTokenDto) {
+  async refresh(refreshToken: string) {
     let payload: { sub: string; type?: string };
     try {
-      payload = await this.jwt.verifyAsync(dto.refreshToken, {
+      payload = await this.jwt.verifyAsync(refreshToken, {
         secret: this.config.getOrThrow<string>('JWT_REFRESH_SECRET'),
       });
     } catch {
@@ -130,7 +137,7 @@ export class AuthService {
 
     const isRefreshTokenValid = await argon2.verify(
       employee.refresh_token_hash,
-      dto.refreshToken,
+      refreshToken,
     );
 
     if (!isRefreshTokenValid) {
@@ -142,17 +149,18 @@ export class AuthService {
     return this.generateTokenPair(employee);
   }
 
-  async logout(dto: RefreshTokenDto) {
-    const payload = this.jwt.decode(dto.refreshToken) as {
-      sub?: string;
-    } | null;
+  async logout(refreshToken: string) {
+    const payload = await this.jwt
+      .verifyAsync<{ sub: string; type: string }>(refreshToken, {
+        secret: this.config.getOrThrow<string>('JWT_REFRESH_SECRET'),
+        ignoreExpiration: true,
+      })
+      .catch(() => null);
 
-    if (payload?.sub) {
+    if (payload?.type === 'refresh') {
       await this.employeeRepository.update(
         { id: payload.sub },
-        {
-          refresh_token_hash: null,
-        },
+        { refresh_token_hash: null },
       );
     }
 
