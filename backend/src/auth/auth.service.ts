@@ -221,6 +221,18 @@ export class AuthService {
       throw new UnauthorizedException(ERROR_MESSAGES.AUTH.INVALID_CREDENTIALS);
     }
 
+    if (employee.deactivated_at) {
+      throw new ForbiddenException(ERROR_MESSAGES.EMPLOYEE.DEACTIVATED);
+    }
+
+    if (!employee.activated_at) {
+      throw new ConflictException(ERROR_MESSAGES.EMPLOYEE.NOT_ACTIVATED);
+    }
+
+    if (!employee.password_hash) {
+      throw new UnauthorizedException(ERROR_MESSAGES.AUTH.INVALID_CREDENTIALS);
+    }
+
     const isPasswordValid = await argon2.verify(
       employee.password_hash,
       dto.password,
