@@ -56,6 +56,8 @@ export class EmployeesService {
         role: true,
         full_name: true,
         password_hash: true,
+        activated_at: true,
+        deactivated_at: true,
       },
     });
 
