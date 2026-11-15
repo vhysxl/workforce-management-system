@@ -88,14 +88,24 @@ export class EmployeesService {
         throw new NotFoundException(ERROR_MESSAGES.EMPLOYEE.NOT_FOUND);
       }
 
-      if (purpose === ActivationTokenPurpose.RESET_PASSWORD) {
-        if (employee.deactivated_at) {
-          throw new ForbiddenException(ERROR_MESSAGES.EMPLOYEE.DEACTIVATED);
-        }
+      if (employee.deactivated_at) {
+        throw new ForbiddenException(ERROR_MESSAGES.EMPLOYEE.DEACTIVATED);
+      }
 
-        if (!employee.activated_at) {
-          throw new ConflictException(ERROR_MESSAGES.EMPLOYEE.NOT_ACTIVATED);
-        }
+      if (
+        purpose === ActivationTokenPurpose.ACTIVATION_ACCOUNT &&
+        employee.activated_at
+      ) {
+        throw new ConflictException(
+          ERROR_MESSAGES.AUTH.ACCOUNT_ALREADY_ACTIVATED,
+        );
+      }
+
+      if (
+        purpose === ActivationTokenPurpose.RESET_PASSWORD &&
+        !employee.activated_at
+      ) {
+        throw new ConflictException(ERROR_MESSAGES.EMPLOYEE.NOT_ACTIVATED);
       }
 
       const token = randomBytes(32).toString('base64url');

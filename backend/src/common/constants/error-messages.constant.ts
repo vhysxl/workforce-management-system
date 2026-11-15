@@ -6,6 +6,7 @@ export const ERROR_MESSAGES = {
   },
   AUTH: {
     INVALID_ACTIVATION_TOKEN: 'Invalid or expired activation token',
+    INVALID_RESET_PASSWORD_TOKEN: 'Invalid or expired reset password token',
     ACCOUNT_ALREADY_ACTIVATED: 'Account already activated',
     INVALID_CREDENTIALS: 'Invalid Credentials',
     INVALID_REFRESH_TOKEN: 'Invalid or expired refresh token',

@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -21,7 +22,11 @@ import {
   ActivationTokenPurpose,
 } from '../employees/entities/activation_token.entities.js';
 import { Employee } from '../employees/entities/employee.entity.js';
-import { ActivateAccountDto, LoginDto } from './dto/auth.dto.js';
+import {
+  ActivateAccountDto,
+  LoginDto,
+  ResetPasswordDto,
+} from './dto/auth.dto.js';
 
 @Injectable()
 export class AuthService {
@@ -98,7 +103,12 @@ export class AuthService {
         lock: { mode: 'pessimistic_write' },
       });
 
-      this.validateActivationToken(token, new Date());
+      this.validateToken(
+        token,
+        ActivationTokenPurpose.ACTIVATION_ACCOUNT,
+        ERROR_MESSAGES.AUTH.INVALID_ACTIVATION_TOKEN,
+        new Date(),
+      );
 
       const employee = await manager.findOne(Employee, {
         where: { id: token.employee_id },
@@ -107,6 +117,10 @@ export class AuthService {
 
       if (!employee) {
         throw new NotFoundException(ERROR_MESSAGES.EMPLOYEE.NOT_FOUND);
+      }
+
+      if (employee.deactivated_at) {
+        throw new ForbiddenException(ERROR_MESSAGES.EMPLOYEE.DEACTIVATED);
       }
 
       if (employee.activated_at) {
@@ -133,20 +147,68 @@ export class AuthService {
     });
   }
 
-  private validateActivationToken(
+  async resetPassword(dto: ResetPasswordDto): Promise<{ message: string }> {
+    const tokenHash = createHash('sha256').update(dto.token).digest('hex');
+    return this.employeeRepository.manager.transaction(async (manager) => {
+      const token = await manager.findOne(ActivationToken, {
+        where: { token_hash: tokenHash },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      this.validateToken(
+        token,
+        ActivationTokenPurpose.RESET_PASSWORD,
+        ERROR_MESSAGES.AUTH.INVALID_RESET_PASSWORD_TOKEN,
+        new Date(),
+      );
+
+      const employee = await manager.findOne(Employee, {
+        where: { id: token.employee_id },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!employee) {
+        throw new NotFoundException(ERROR_MESSAGES.EMPLOYEE.NOT_FOUND);
+      }
+
+      if (employee.deactivated_at) {
+        throw new ForbiddenException(ERROR_MESSAGES.EMPLOYEE.DEACTIVATED);
+      }
+
+      if (!employee.activated_at) {
+        throw new ConflictException(ERROR_MESSAGES.EMPLOYEE.NOT_ACTIVATED);
+      }
+
+      const passwordHash = await argon2.hash(dto.password);
+      const now = new Date();
+
+      await manager.update(
+        Employee,
+        { id: employee.id },
+        { password_hash: passwordHash, refresh_token_hash: null },
+      );
+      await manager.update(
+        ActivationToken,
+        { id: token.id },
+        { used_at: now },
+      );
+
+      return { message: 'Password reset successfully' };
+    });
+  }
+
+  private validateToken(
     token: ActivationToken | null,
+    expectedPurpose: ActivationTokenPurpose,
+    errorMessage: string,
     now: Date,
   ): asserts token is ActivationToken {
-    if (!token || token.purpose !== ActivationTokenPurpose.ACTIVATION_ACCOUNT) {
-      throw new UnauthorizedException(
-        ERROR_MESSAGES.AUTH.INVALID_ACTIVATION_TOKEN,
-      );
+    if (!token || token.purpose !== expectedPurpose) {
+      throw new UnauthorizedException(errorMessage);
     }
 
     if (token.used_at || token.expires_at.getTime() <= now.getTime()) {
-      throw new UnauthorizedException(
-        ERROR_MESSAGES.AUTH.INVALID_ACTIVATION_TOKEN,
-      );
+      throw new UnauthorizedException(errorMessage);
     }
   }
 

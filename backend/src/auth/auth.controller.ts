@@ -13,7 +13,11 @@ import { HttpAdapterHost } from '@nestjs/core';
 import { ERROR_MESSAGES } from '../common/constants/error-messages.constant.js';
 import { AUTH_CONSTANTS } from './auth.constants.js';
 import { AuthService } from './auth.service.js';
-import { ActivateAccountDto, LoginDto } from './dto/auth.dto.js';
+import {
+  ActivateAccountDto,
+  LoginDto,
+  ResetPasswordDto,
+} from './dto/auth.dto.js';
 
 @Controller('auth')
 export class AuthController {
@@ -26,6 +30,12 @@ export class AuthController {
   @Post('activate-account')
   activateAccount(@Body() dto: ActivateAccountDto) {
     return this.authService.activateAccount(dto);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('reset-password')
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
   }
 
   @HttpCode(HttpStatus.OK)

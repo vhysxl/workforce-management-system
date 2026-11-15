@@ -37,6 +37,8 @@ export class ActivateAccountDto {
   password: string;
 }
 
+export class ResetPasswordDto extends ActivateAccountDto {}
+
 export class RefreshTokenDto {
   @IsString()
   @IsNotEmpty()
