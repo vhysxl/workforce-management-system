@@ -9,10 +9,9 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { createHash } from 'node:crypto';
-
 import * as argon2 from 'argon2';
 import type { StringValue } from 'ms';
+import { createHash } from 'node:crypto';
 import { Repository } from 'typeorm';
 
 import { ERROR_MESSAGES } from '../common/constants/error-messages.constant.js';
@@ -20,7 +19,7 @@ import { EmployeesService } from '../employees/employees.service.js';
 import {
   ActivationToken,
   ActivationTokenPurpose,
-} from '../employees/entities/activation_token.entities.js';
+} from '../employees/entities/activation-token.entities.js';
 import { Employee } from '../employees/entities/employee.entity.js';
 import {
   ActivateAccountDto,
@@ -137,11 +136,7 @@ export class AuthService {
         { id: employee.id },
         { password_hash: passwordHash, activated_at: now },
       );
-      await manager.update(
-        ActivationToken,
-        { id: token.id },
-        { used_at: now },
-      );
+      await manager.update(ActivationToken, { id: token.id }, { used_at: now });
 
       return { message: 'Account activated successfully' };
     });
@@ -187,11 +182,7 @@ export class AuthService {
         { id: employee.id },
         { password_hash: passwordHash, refresh_token_hash: null },
       );
-      await manager.update(
-        ActivationToken,
-        { id: token.id },
-        { used_at: now },
-      );
+      await manager.update(ActivationToken, { id: token.id }, { used_at: now });
 
       return { message: 'Password reset successfully' };
     });

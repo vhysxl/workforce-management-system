@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { EmployeesController } from './employees.controller.js';
 import { EmployeesService } from './employees.service.js';
-import { ActivationToken } from './entities/activation_token.entities.js';
+import { ActivationToken } from './entities/activation-token.entities.js';
 import { Employee } from './entities/employee.entity.js';
 
 @Module({
