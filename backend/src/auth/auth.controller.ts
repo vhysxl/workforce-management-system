@@ -2,9 +2,12 @@ import {
   Body,
   Controller,
   Cookies,
+  Get,
+  Header,
   HttpCode,
   HttpStatus,
   Post,
+  Query,
   Res,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -15,6 +18,7 @@ import { AUTH_CONSTANTS } from './auth.constants.js';
 import { AuthService } from './auth.service.js';
 import {
   ActivateAccountDto,
+  CheckTokenDto,
   LoginDto,
   ResetPasswordDto,
 } from './dto/auth.dto.js';
@@ -25,6 +29,12 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly adapterHost: HttpAdapterHost,
   ) {}
+
+  @Get('check-token')
+  @Header('Cache-Control', 'no-store')
+  checkToken(@Query() dto: CheckTokenDto) {
+    return this.authService.checkToken(dto);
+  }
 
   @HttpCode(HttpStatus.OK)
   @Post('activate-account')

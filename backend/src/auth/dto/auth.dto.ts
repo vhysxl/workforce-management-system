@@ -8,6 +8,13 @@ import {
 
 import { ToLowerCaseTrim } from '../../common/decorators/to-lower-case.decorator.js';
 
+export class CheckTokenDto {
+  @IsString()
+  @IsNotEmpty()
+  token: string;
+
+}
+
 export class LoginDto {
   @ToLowerCaseTrim()
   @MaxLength(50)
