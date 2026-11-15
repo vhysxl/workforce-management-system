@@ -8,6 +8,7 @@ import { Employee } from '../employees/entities/employee.entity.js';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 import { JwtGuard } from './guards/jwt-auth.guard.js';
+import { RolesGuard } from './guards/roles.guard.js';
 
 @Module({
   imports: [
@@ -16,7 +17,7 @@ import { JwtGuard } from './guards/jwt-auth.guard.js';
     EmployeesModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtGuard],
-  exports: [JwtGuard],
+  providers: [AuthService, JwtGuard, RolesGuard],
+  exports: [JwtGuard, RolesGuard],
 })
 export class AuthModule {}
