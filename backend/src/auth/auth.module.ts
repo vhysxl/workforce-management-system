@@ -7,6 +7,8 @@ import { ActivationToken } from '../employees/entities/activation_token.entities
 import { Employee } from '../employees/entities/employee.entity.js';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
+import { JwtGuard } from './guards/jwt-auth.guard.js';
+import { RolesGuard } from './guards/roles.guard.js';
 
 @Module({
   imports: [
@@ -15,6 +17,7 @@ import { AuthService } from './auth.service.js';
     EmployeesModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, JwtGuard, RolesGuard],
+  exports: [JwtGuard, RolesGuard],
 })
 export class AuthModule {}
