@@ -40,7 +40,7 @@ export class Employee {
   @Column({ unique: true })
   email: string;
 
-  @Column({ select: false })
+  @Column({ select: false, nullable: true })
   password_hash: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true, select: false })
@@ -87,6 +87,9 @@ export class Employee {
     nullable: true,
   })
   religion: Religion | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  activated_at: Date | null;
 
   @CreateDateColumn({ type: 'datetime' })
   created_at: Date;
