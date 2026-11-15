@@ -13,7 +13,11 @@ import { HttpAdapterHost } from '@nestjs/core';
 import { ERROR_MESSAGES } from '../common/constants/error-messages.constant.js';
 import { AUTH_CONSTANTS } from './auth.constants.js';
 import { AuthService } from './auth.service.js';
-import { LoginDto } from './dto/auth.dto.js';
+import {
+  ActivateAccountDto,
+  LoginDto,
+  ResetPasswordDto,
+} from './dto/auth.dto.js';
 
 @Controller('auth')
 export class AuthController {
@@ -21,6 +25,23 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly adapterHost: HttpAdapterHost,
   ) {}
+
+  @HttpCode(HttpStatus.OK)
+  @Post('activate-account')
+  activateAccount(@Body() dto: ActivateAccountDto) {
+    return this.authService.activateAccount(dto);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('reset-password')
+  async resetPassword(
+    @Body() dto: ResetPasswordDto,
+    @Res({ passthrough: true }) res: unknown,
+  ) {
+    const result = await this.authService.resetPassword(dto);
+    this.clearRefreshCookie(res, AUTH_CONSTANTS.REFRESH_COOKIE);
+    return result;
+  }
 
   @HttpCode(HttpStatus.OK)
   @Post('login')

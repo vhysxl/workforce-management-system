@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
 } from '@nestjs/common';
@@ -29,6 +30,20 @@ export class EmployeesController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.employeesService.findOne(id);
+  }
+
+  @Post(':employee_id/activation-token')
+  issueActivationToken(
+    @Param('employee_id', new ParseUUIDPipe()) employeeId: string,
+  ) {
+    return this.employeesService.issueActivationToken(employeeId);
+  }
+
+  @Post(':employee_id/reset-password-token')
+  issueResetPasswordToken(
+    @Param('employee_id', new ParseUUIDPipe()) employeeId: string,
+  ) {
+    return this.employeesService.issueResetPasswordToken(employeeId);
   }
 
   // @Patch(':id')
