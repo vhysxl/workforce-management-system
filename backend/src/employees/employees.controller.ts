@@ -39,6 +39,13 @@ export class EmployeesController {
     return this.employeesService.issueActivationToken(employeeId);
   }
 
+  @Post(':employee_id/reset-password-token')
+  issueResetPasswordToken(
+    @Param('employee_id', new ParseUUIDPipe()) employeeId: string,
+  ) {
+    return this.employeesService.issueResetPasswordToken(employeeId);
+  }
+
   // @Patch(':id')
   // update(@Param('id') id: string, @Body() updateEmployeeDto: UpdateEmployeeDto) {
   //   return this.employeesService.update(+id, updateEmployeeDto);

@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { createHash, randomBytes } from 'node:crypto';
@@ -60,6 +65,19 @@ export class EmployeesService {
   async issueActivationToken(
     employeeId: string,
   ): Promise<{ raw_token: string }> {
+    return this.issueToken(employeeId, ActivationTokenPurpose.ACTIVATION_ACCOUNT);
+  }
+
+  async issueResetPasswordToken(
+    employeeId: string,
+  ): Promise<{ raw_token: string }> {
+    return this.issueToken(employeeId, ActivationTokenPurpose.RESET_PASSWORD);
+  }
+
+  private async issueToken(
+    employeeId: string,
+    purpose: ActivationTokenPurpose,
+  ): Promise<{ raw_token: string }> {
     return this.employeesRepository.manager.transaction(async (manager) => {
       const employee = await manager.findOne(Employee, {
         where: { id: employeeId },
@@ -68,6 +86,16 @@ export class EmployeesService {
 
       if (!employee) {
         throw new NotFoundException(ERROR_MESSAGES.EMPLOYEE.NOT_FOUND);
+      }
+
+      if (purpose === ActivationTokenPurpose.RESET_PASSWORD) {
+        if (employee.deactivated_at) {
+          throw new ForbiddenException(ERROR_MESSAGES.EMPLOYEE.DEACTIVATED);
+        }
+
+        if (!employee.activated_at) {
+          throw new ConflictException(ERROR_MESSAGES.EMPLOYEE.NOT_ACTIVATED);
+        }
       }
 
       const token = randomBytes(32).toString('base64url');
@@ -79,7 +107,7 @@ export class EmployeesService {
         ActivationToken,
         {
           employee_id: employeeId,
-          purpose: ActivationTokenPurpose.ACTIVATION_ACCOUNT,
+          purpose,
           used_at: IsNull(),
         },
         { used_at: now },
@@ -91,7 +119,7 @@ export class EmployeesService {
         manager.create(ActivationToken, {
           token_hash: tokenHash,
           employee_id: employeeId,
-          purpose: ActivationTokenPurpose.ACTIVATION_ACCOUNT,
+          purpose,
           used_at: null,
           expires_at: new Date(now.getTime() + 24 * 60 * 60 * 1000),
         }),
