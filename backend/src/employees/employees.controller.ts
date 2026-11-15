@@ -7,11 +7,16 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 
+import { Roles } from '../auth/decorators/roles.decorator.js';
+import { JwtGuard } from '../auth/guards/jwt-auth.guard.js';
+import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { CreateEmployeeDto } from './dto/create-employee.dto.js';
 import { UpdateEmployeeDto } from './dto/update-employee.dto.js';
 import { EmployeesService } from './employees.service.js';
+import { EmployeeRole } from './entities/employee.entity.js';
 
 @Controller('employees')
 export class EmployeesController {
@@ -33,6 +38,8 @@ export class EmployeesController {
   }
 
   @Post(':employee_id/activation-token')
+  @UseGuards(JwtGuard, RolesGuard)
+  @Roles([EmployeeRole.ADMIN, EmployeeRole.HRD])
   issueActivationToken(
     @Param('employee_id', new ParseUUIDPipe()) employeeId: string,
   ) {
@@ -40,6 +47,8 @@ export class EmployeesController {
   }
 
   @Post(':employee_id/reset-password-token')
+  @UseGuards(JwtGuard, RolesGuard)
+  @Roles([EmployeeRole.ADMIN, EmployeeRole.HRD])
   issueResetPasswordToken(
     @Param('employee_id', new ParseUUIDPipe()) employeeId: string,
   ) {
