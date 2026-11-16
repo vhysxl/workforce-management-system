@@ -3,6 +3,7 @@ export const ERROR_MESSAGES = {
     NOT_FOUND: 'Employee not found',
     NOT_ACTIVATED: 'Employee account is not activated',
     DEACTIVATED: 'Employee account is deactivated',
+    ALREADY_EXISTS: 'Employee with this email or NIK already exists',
   },
   AUTH: {
     INSUFFICIENT_ROLE: 'You do not have permission to access this resource',
