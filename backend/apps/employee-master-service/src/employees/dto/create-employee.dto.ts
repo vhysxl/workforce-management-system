@@ -30,7 +30,7 @@ export class CreateEmployeeDto {
 
   @ToLowerCaseTrim()
   @IsEmail()
-  @MaxLength(50)
+  @MaxLength(150)
   email: string;
 
   @IsOptional()
