@@ -4,6 +4,14 @@ export const ERROR_MESSAGES = {
     NOT_ACTIVATED: 'Employee account is not activated',
     DEACTIVATED: 'Employee account is deactivated',
     ALREADY_EXISTS: 'Employee with this email or NIK already exists',
+    CANNOT_DEACTIVATE_SELF: 'You cannot deactivate your own account',
+    ALREADY_DEACTIVATED: 'Employee account is already deactivated',
+    REGISTRATION_FAILED:
+      'Failed to process employee registration. Please try again later.',
+    DEACTIVATION_FAILED:
+      'Failed to process employee deactivation. Please try again later.',
+    ACTIVATION_FAILED:
+      'Failed to complete account activation. Please try again later.',
   },
   AUTH: {
     INSUFFICIENT_ROLE: 'You do not have permission to access this resource',
@@ -17,5 +25,11 @@ export const ERROR_MESSAGES = {
     MISSING_REFRESH_TOKEN: 'Refresh token is missing',
     CREDENTIAL_ALREADY_EXISTS:
       'Credential already exists for this email or employee',
+  },
+  SERVICE: {
+    UNREACHABLE: (service: string, error?: string | number) =>
+      `Unable to connect to ${service}${error !== undefined ? ` : ${error}` : ''}`,
+    FAILED: (service: string, error?: string | number) =>
+      `Downstream ${service} returned an error${error !== undefined ? ` : ${error}` : ''}`,
   },
 } as const;

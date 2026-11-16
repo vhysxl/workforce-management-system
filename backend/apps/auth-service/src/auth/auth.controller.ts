@@ -57,7 +57,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: unknown,
   ) {
     const result = await this.authService.resetPassword(dto);
-    this.clearRefreshCookie(res, AUTH_CONSTANTS.REFRESH_COOKIE);
+    this.clearRefreshCookie(res);
     return result;
   }
 
@@ -118,7 +118,7 @@ export class AuthController {
     @Cookies(AUTH_CONSTANTS.REFRESH_COOKIE) refreshToken: string | undefined,
     @Res({ passthrough: true }) res: unknown,
   ) {
-    this.clearRefreshCookie(res, AUTH_CONSTANTS.REFRESH_COOKIE);
+    this.clearRefreshCookie(res);
     if (!refreshToken) return { message: 'Logged out successfully' };
     return this.authService.logout(refreshToken);
   }
@@ -154,7 +154,7 @@ export class AuthController {
     });
   }
 
-  private clearRefreshCookie(res: unknown, val_name: string) {
+  private clearRefreshCookie(res: unknown) {
     this.adapterHost.httpAdapter.clearCookie(
       res,
       AUTH_CONSTANTS.REFRESH_COOKIE,

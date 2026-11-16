@@ -10,4 +10,10 @@ export default () => ({
     password: process.env.DB_PASSWORD ?? 'root',
     name: process.env.DB_NAME ?? 'workforce_management_system',
   },
+
+  services: {
+    employee: {
+      url: process.env.EMPLOYEE_SERVICE_URL ?? 'http://localhost:3002/api',
+    },
+  },
 });

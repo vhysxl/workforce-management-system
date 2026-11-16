@@ -4,8 +4,10 @@ import {
   Get,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Put,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -18,6 +20,7 @@ import {
 } from '@app/common';
 import type { AuthenticatedRequest } from '@app/common';
 import { CreateEmployeeDto } from './dto/create-employee.dto.js';
+import { PaginationQueryDto } from './dto/pagination-query.dto.js';
 import { UpdateEmployeeDto } from './dto/update-employee.dto.js';
 import { EmployeesService } from './employees.service.js';
 
@@ -34,14 +37,27 @@ export class EmployeesController {
 
   @Get()
   @Roles([EmployeeRole.ADMIN, EmployeeRole.HRD])
-  findAll() {
-    return this.employeesService.findAll();
+  findAll(@Query() query: PaginationQueryDto) {
+    return this.employeesService.findAll(query);
+  }
+
+  @Get('me')
+  @Roles([EmployeeRole.ADMIN, EmployeeRole.HRD, EmployeeRole.EMPLOYEE])
+  findMe(@Req() request: AuthenticatedRequest) {
+    return this.employeesService.findOne(
+      request.user.sub,
+      request.user.role,
+      request.user.sub,
+    );
   }
 
   @Get(':id')
   @Roles([EmployeeRole.ADMIN, EmployeeRole.HRD, EmployeeRole.EMPLOYEE])
-  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
-    return this.employeesService.findOne(id);
+  findOne(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.employeesService.findOne(id, request.user.role, request.user.sub);
   }
 
   @Put(':id')
@@ -55,6 +71,19 @@ export class EmployeesController {
       id,
       updateEmployeeDto,
       request.user.role,
+    );
+  }
+
+  @Patch(':id/deactivate')
+  @Roles([EmployeeRole.ADMIN, EmployeeRole.HRD])
+  deactivate(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.employeesService.deactivate(
+      id,
+      request.user.role,
+      request.user.sub,
     );
   }
 }

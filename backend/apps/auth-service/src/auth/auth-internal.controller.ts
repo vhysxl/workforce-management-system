@@ -3,6 +3,9 @@ import {
   Controller,
   HttpCode,
   HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Patch,
   Post,
 } from '@nestjs/common';
 
@@ -17,5 +20,13 @@ export class AuthInternalController {
   @Post('credentials')
   createCredential(@Body() dto: CreateCredentialDto) {
     return this.authService.createCredential(dto);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Patch('credentials/:employeeId/deactivate')
+  deactivateCredential(
+    @Param('employeeId', new ParseUUIDPipe()) employeeId: string,
+  ) {
+    return this.authService.deactivateCredential(employeeId);
   }
 }

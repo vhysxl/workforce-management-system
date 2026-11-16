@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { JwtGuard, RolesGuard } from '@app/common';
 import { EmployeesController } from './employees.controller.js';
+import { EmployeesInternalController } from './employees-internal.controller.js';
 import { EmployeesService } from './employees.service.js';
 import { Employee } from './entities/employee.entity.js';
 
@@ -12,7 +13,7 @@ import { Employee } from './entities/employee.entity.js';
     JwtModule.register({}),
     TypeOrmModule.forFeature([Employee]),
   ],
-  controllers: [EmployeesController],
+  controllers: [EmployeesController, EmployeesInternalController],
   providers: [EmployeesService, JwtGuard, RolesGuard],
   exports: [EmployeesService],
 })
