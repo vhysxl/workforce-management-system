@@ -1,18 +1,20 @@
 import {
   IsEmail,
+  IsEnum,
   IsNotEmpty,
   IsString,
   IsStrongPassword,
+  IsUUID,
   MaxLength,
 } from 'class-validator';
 
+import { EmployeeRole } from '@app/common';
 import { ToLowerCaseTrim } from '../../common/decorators/to-lower-case.decorator.js';
 
 export class CheckTokenDto {
   @IsString()
   @IsNotEmpty()
   token: string;
-
 }
 
 export class LoginDto {
@@ -50,4 +52,24 @@ export class RefreshTokenDto {
   @IsString()
   @IsNotEmpty()
   refreshToken: string;
+}
+
+export class IssueTokenDto {
+  @IsUUID()
+  @IsNotEmpty()
+  employee_id: string;
+}
+
+export class CreateCredentialDto {
+  @IsUUID()
+  @IsNotEmpty()
+  employee_id: string;
+
+  @ToLowerCaseTrim()
+  @MaxLength(150)
+  @IsEmail()
+  email: string;
+
+  @IsEnum(EmployeeRole)
+  role: EmployeeRole;
 }

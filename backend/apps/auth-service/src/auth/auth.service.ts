@@ -11,29 +11,28 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import * as argon2 from 'argon2';
 import type { StringValue } from 'ms';
-import { createHash } from 'node:crypto';
-import { Repository } from 'typeorm';
+import { createHash, randomBytes } from 'node:crypto';
+import { IsNull, Repository } from 'typeorm';
 
-import { ERROR_MESSAGES } from '../common/constants/error-messages.constant.js';
-import { EmployeesService } from '../employees/employees.service.js';
-import {
-  ActivationToken,
-  ActivationTokenPurpose,
-} from '../employees/entities/activation-token.entities.js';
-import { Employee } from '../employees/entities/employee.entity.js';
+import { ActivationTokenPurpose, ERROR_MESSAGES } from '@app/common';
 import {
   ActivateAccountDto,
   CheckTokenDto,
+  CreateCredentialDto,
+  IssueTokenDto,
   LoginDto,
   ResetPasswordDto,
 } from './dto/auth.dto.js';
+import { ActivationToken } from './entities/activation-token.entity.js';
+import { EmployeeAuthCredential } from './entities/employee-auth-credential.entity.js';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(Employee)
-    private employeeRepository: Repository<Employee>,
-    private readonly employeesService: EmployeesService,
+    @InjectRepository(EmployeeAuthCredential)
+    private readonly credentialRepository: Repository<EmployeeAuthCredential>,
+    @InjectRepository(ActivationToken)
+    private readonly tokenRepository: Repository<ActivationToken>,
 
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
@@ -41,7 +40,7 @@ export class AuthService {
 
   async activateAccount(dto: ActivateAccountDto): Promise<{ message: string }> {
     const tokenHash = createHash('sha256').update(dto.token).digest('hex');
-    return this.employeeRepository.manager.transaction(async (manager) => {
+    return this.credentialRepository.manager.transaction(async (manager) => {
       const token = await manager.findOne(ActivationToken, {
         where: { token_hash: tokenHash },
         lock: { mode: 'pessimistic_write' },
@@ -54,20 +53,16 @@ export class AuthService {
         new Date(),
       );
 
-      const employee = await manager.findOne(Employee, {
-        where: { id: token.employee_id },
+      const credential = await manager.findOne(EmployeeAuthCredential, {
+        where: { employee_id: token.employee_id },
         lock: { mode: 'pessimistic_write' },
       });
 
-      if (!employee) {
+      if (!credential) {
         throw new NotFoundException(ERROR_MESSAGES.EMPLOYEE.NOT_FOUND);
       }
 
-      if (employee.deactivated_at) {
-        throw new ForbiddenException(ERROR_MESSAGES.EMPLOYEE.DEACTIVATED);
-      }
-
-      if (employee.activated_at) {
+      if (credential.is_active) {
         throw new ConflictException(
           ERROR_MESSAGES.AUTH.ACCOUNT_ALREADY_ACTIVATED,
         );
@@ -77,11 +72,13 @@ export class AuthService {
       const now = new Date();
 
       await manager.update(
-        Employee,
-        { id: employee.id },
-        { password_hash: passwordHash, activated_at: now },
+        EmployeeAuthCredential,
+        { id: credential.id },
+        { password_hash: passwordHash, is_active: true },
       );
       await manager.update(ActivationToken, { id: token.id }, { used_at: now });
+
+      // TODO: call downstream to notify employee-master-service
 
       return { message: 'Account activated successfully' };
     });
@@ -92,65 +89,73 @@ export class AuthService {
     purpose: ActivationTokenPurpose | null;
   }> {
     const tokenHash = createHash('sha256').update(dto.token).digest('hex');
-    const token = await this.employeeRepository.manager.findOne(
-      ActivationToken,
-      {
-        where: { token_hash: tokenHash },
-        relations: { employee: true },
-      },
-    );
+    const token = await this.tokenRepository.findOne({
+      where: { token_hash: tokenHash },
+    });
 
     if (
       !token ||
       token.used_at ||
-      token.expires_at.getTime() <= Date.now() ||
-      !token.employee ||
-      token.employee.deactivated_at
+      token.expires_at.getTime() <= Date.now()
     ) {
       return { is_active: false, purpose: token?.purpose ?? null };
     }
 
-    const isActivated = Boolean(token.employee.activated_at);
+    const credential = await this.credentialRepository.findOne({
+      where: { employee_id: token.employee_id },
+    });
+
+    if (!credential) {
+      return { is_active: false, purpose: token.purpose };
+    }
 
     if (token.purpose === ActivationTokenPurpose.ACTIVATION_ACCOUNT) {
-      return { is_active: !isActivated, purpose: token.purpose };
+      return { is_active: !credential.is_active, purpose: token.purpose };
     } else if (token.purpose === ActivationTokenPurpose.RESET_PASSWORD) {
-      return { is_active: isActivated, purpose: token.purpose };
+      return { is_active: credential.is_active, purpose: token.purpose };
     } else {
       return { is_active: false, purpose: token.purpose };
     }
   }
 
   async login(dto: LoginDto) {
-    const employee = await this.employeesService.findByEmailWithPassword(
-      dto.email,
-    );
+    const credential = await this.credentialRepository.findOne({
+      where: { email: dto.email },
+      select: {
+        id: true,
+        employee_id: true,
+        email: true,
+        role: true,
+        password_hash: true,
+        is_active: true,
+      },
+    });
 
-    if (!employee) {
+    if (!credential) {
       throw new UnauthorizedException(ERROR_MESSAGES.AUTH.INVALID_CREDENTIALS);
     }
 
-    if (employee.deactivated_at) {
-      throw new ForbiddenException(ERROR_MESSAGES.EMPLOYEE.DEACTIVATED);
-    }
-
-    if (!employee.activated_at) {
+    if (!credential.is_active && !credential.password_hash) {
       throw new ConflictException(ERROR_MESSAGES.EMPLOYEE.NOT_ACTIVATED);
     }
 
-    if (!employee.password_hash) {
+    if (!credential.is_active && credential.password_hash) {
+      throw new ForbiddenException(ERROR_MESSAGES.EMPLOYEE.DEACTIVATED);
+    }
+
+    if (!credential.password_hash) {
       throw new UnauthorizedException(ERROR_MESSAGES.AUTH.INVALID_CREDENTIALS);
     }
 
     const isPasswordValid = await argon2.verify(
-      employee.password_hash,
+      credential.password_hash,
       dto.password,
     );
     if (!isPasswordValid) {
       throw new UnauthorizedException(ERROR_MESSAGES.AUTH.INVALID_CREDENTIALS);
     }
 
-    return this.generateTokenPair(employee);
+    return this.generateTokenPair(credential);
   }
 
   async logout(refreshToken: string) {
@@ -161,9 +166,9 @@ export class AuthService {
       })
       .catch(() => null);
 
-    if (payload?.type === 'refresh') {
-      await this.employeeRepository.update(
-        { id: payload.sub },
+    if (payload?.type === 'refresh' && payload.sub) {
+      await this.credentialRepository.update(
+        { employee_id: payload.sub },
         { refresh_token_hash: null },
       );
     }
@@ -189,26 +194,26 @@ export class AuthService {
       );
     }
 
-    const employee = await this.employeeRepository.findOne({
-      where: { id: payload.sub },
+    const credential = await this.credentialRepository.findOne({
+      where: { employee_id: payload.sub },
       select: {
         id: true,
+        employee_id: true,
         email: true,
         role: true,
-        full_name: true,
         refresh_token_hash: true,
-        deactivated_at: true,
+        is_active: true,
       },
     });
 
-    if (!employee || !employee.refresh_token_hash || employee.deactivated_at) {
+    if (!credential || !credential.refresh_token_hash || !credential.is_active) {
       throw new UnauthorizedException(
         ERROR_MESSAGES.AUTH.INVALID_REFRESH_TOKEN,
       );
     }
 
     const isRefreshTokenValid = await argon2.verify(
-      employee.refresh_token_hash,
+      credential.refresh_token_hash,
       refreshToken,
     );
 
@@ -218,12 +223,12 @@ export class AuthService {
       );
     }
 
-    return this.generateTokenPair(employee);
+    return this.generateTokenPair(credential);
   }
 
   async resetPassword(dto: ResetPasswordDto): Promise<{ message: string }> {
     const tokenHash = createHash('sha256').update(dto.token).digest('hex');
-    return this.employeeRepository.manager.transaction(async (manager) => {
+    return this.credentialRepository.manager.transaction(async (manager) => {
       const token = await manager.findOne(ActivationToken, {
         where: { token_hash: tokenHash },
         lock: { mode: 'pessimistic_write' },
@@ -236,29 +241,25 @@ export class AuthService {
         new Date(),
       );
 
-      const employee = await manager.findOne(Employee, {
-        where: { id: token.employee_id },
+      const credential = await manager.findOne(EmployeeAuthCredential, {
+        where: { employee_id: token.employee_id },
         lock: { mode: 'pessimistic_write' },
       });
 
-      if (!employee) {
+      if (!credential) {
         throw new NotFoundException(ERROR_MESSAGES.EMPLOYEE.NOT_FOUND);
       }
 
-      if (employee.deactivated_at) {
+      if (!credential.is_active) {
         throw new ForbiddenException(ERROR_MESSAGES.EMPLOYEE.DEACTIVATED);
-      }
-
-      if (!employee.activated_at) {
-        throw new ConflictException(ERROR_MESSAGES.EMPLOYEE.NOT_ACTIVATED);
       }
 
       const passwordHash = await argon2.hash(dto.password);
       const now = new Date();
 
       await manager.update(
-        Employee,
-        { id: employee.id },
+        EmployeeAuthCredential,
+        { id: credential.id },
         { password_hash: passwordHash, refresh_token_hash: null },
       );
       await manager.update(ActivationToken, { id: token.id }, { used_at: now });
@@ -267,21 +268,124 @@ export class AuthService {
     });
   }
 
-  private async generateTokenPair(employee: Employee): Promise<{
+  async issueActivationToken(dto: IssueTokenDto): Promise<{ raw_token: string }> {
+    return this.issueToken(
+      dto.employee_id,
+      ActivationTokenPurpose.ACTIVATION_ACCOUNT,
+    );
+  }
+
+  async issueResetPasswordToken(dto: IssueTokenDto): Promise<{ raw_token: string }> {
+    return this.issueToken(
+      dto.employee_id,
+      ActivationTokenPurpose.RESET_PASSWORD,
+    );
+  }
+
+  async createCredential(
+    dto: CreateCredentialDto,
+  ): Promise<{ message: string }> {
+    return this.credentialRepository.manager.transaction(async (manager) => {
+      const existing = await manager.findOne(EmployeeAuthCredential, {
+        where: [{ email: dto.email }, { employee_id: dto.employee_id }],
+      });
+
+      if (existing) {
+        throw new ConflictException(
+          ERROR_MESSAGES.AUTH.CREDENTIAL_ALREADY_EXISTS,
+        );
+      }
+
+      await manager.save(
+        EmployeeAuthCredential,
+        manager.create(EmployeeAuthCredential, {
+          employee_id: dto.employee_id,
+          email: dto.email,
+          role: dto.role,
+          is_active: false,
+          password_hash: null,
+          refresh_token_hash: null,
+        }),
+      );
+
+      return { message: 'Credential created successfully' };
+    });
+  }
+
+  private async issueToken(
+    employeeId: string,
+    purpose: ActivationTokenPurpose,
+  ): Promise<{ raw_token: string }> {
+    return this.credentialRepository.manager.transaction(async (manager) => {
+      const credential = await manager.findOne(EmployeeAuthCredential, {
+        where: { employee_id: employeeId },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!credential) {
+        throw new NotFoundException(ERROR_MESSAGES.EMPLOYEE.NOT_FOUND);
+      }
+
+      if (
+        purpose === ActivationTokenPurpose.ACTIVATION_ACCOUNT &&
+        credential.is_active
+      ) {
+        throw new ConflictException(
+          ERROR_MESSAGES.AUTH.ACCOUNT_ALREADY_ACTIVATED,
+        );
+      }
+
+      if (
+        purpose === ActivationTokenPurpose.RESET_PASSWORD &&
+        !credential.is_active
+      ) {
+        throw new ConflictException(ERROR_MESSAGES.EMPLOYEE.NOT_ACTIVATED);
+      }
+
+      const token = randomBytes(32).toString('base64url');
+      const tokenHash = createHash('sha256').update(token).digest('hex');
+      const now = new Date();
+
+      await manager.update(
+        ActivationToken,
+        {
+          employee_id: employeeId,
+          purpose,
+          used_at: IsNull(),
+        },
+        { used_at: now },
+      );
+
+      await manager.save(
+        ActivationToken,
+        manager.create(ActivationToken, {
+          token_hash: tokenHash,
+          employee_id: employeeId,
+          purpose,
+          used_at: null,
+          expires_at: new Date(now.getTime() + 24 * 60 * 60 * 1000),
+        }),
+      );
+
+      return { raw_token: token };
+    });
+  }
+
+  private async generateTokenPair(credential: EmployeeAuthCredential): Promise<{
     accessToken: string;
     refreshToken: string;
     refreshExpiredAt: Date;
   }> {
     const [accessToken, refreshToken] = await Promise.all([
-      this.signAccessToken(employee),
-      this.signRefreshToken(employee),
+      this.signAccessToken(credential),
+      this.signRefreshToken(credential),
     ]);
 
     const { exp } = this.jwt.decode<{ exp: number }>(refreshToken);
-
     const hashedRefreshToken = await argon2.hash(refreshToken);
-    await this.employeeRepository.update(
-      { id: employee.id },
+
+    await this.credentialRepository.update(
+      { id: credential.id },
       {
         refresh_token_hash: hashedRefreshToken,
       },
@@ -294,13 +398,12 @@ export class AuthService {
     };
   }
 
-  private signAccessToken(employee: Employee): Promise<string> {
+  private signAccessToken(credential: EmployeeAuthCredential): Promise<string> {
     return this.jwt.signAsync(
       {
-        sub: employee.id,
-        role: employee.role,
-        email: employee.email,
-        name: employee.full_name,
+        sub: credential.employee_id,
+        role: credential.role,
+        email: credential.email,
         type: 'access',
       },
       {
@@ -310,10 +413,10 @@ export class AuthService {
     );
   }
 
-  private signRefreshToken(employee: Employee): Promise<string> {
+  private signRefreshToken(credential: EmployeeAuthCredential): Promise<string> {
     return this.jwt.signAsync(
       {
-        sub: employee.id,
+        sub: credential.employee_id,
         type: 'refresh',
       },
       {

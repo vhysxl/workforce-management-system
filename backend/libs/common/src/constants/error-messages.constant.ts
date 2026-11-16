@@ -14,5 +14,7 @@ export const ERROR_MESSAGES = {
     INVALID_CREDENTIALS: 'Invalid Credentials',
     INVALID_REFRESH_TOKEN: 'Invalid or expired refresh token',
     MISSING_REFRESH_TOKEN: 'Refresh token is missing',
+    CREDENTIAL_ALREADY_EXISTS:
+      'Credential already exists for this email or employee',
   },
 } as const;

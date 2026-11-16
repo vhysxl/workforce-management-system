@@ -9,7 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { createHash, randomBytes } from 'node:crypto';
 import { IsNull, Repository } from 'typeorm';
 
-import { ERROR_MESSAGES } from '../common/constants/error-messages.constant.js';
+import { ERROR_MESSAGES } from '@app/common';
 import { CreateEmployeeDto } from './dto/create-employee.dto.js';
 import { UpdateEmployeeDto } from './dto/update-employee.dto.js';
 import {

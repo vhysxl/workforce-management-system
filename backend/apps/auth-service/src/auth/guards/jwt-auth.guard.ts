@@ -9,14 +9,13 @@ import { JwtService } from '@nestjs/jwt';
 
 import type { Request } from 'express';
 
-import { ERROR_MESSAGES } from '../../common/constants/error-messages.constant.js';
-import type { EmployeeRole } from '../../employees/entities/employee.entity.js';
+import { EmployeeRole, ERROR_MESSAGES } from '@app/common';
 
 export interface AccessTokenPayload {
   sub: string;
   role: EmployeeRole;
   email: string;
-  name: string;
+  name?: string;
   type: 'access';
   iat: number;
   exp: number;

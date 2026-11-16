@@ -10,18 +10,23 @@ import {
   Query,
   Res,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
 
-import { ERROR_MESSAGES } from '../common/constants/error-messages.constant.js';
+import { EmployeeRole, ERROR_MESSAGES } from '@app/common';
 import { AUTH_CONSTANTS } from './auth.constants.js';
 import { AuthService } from './auth.service.js';
+import { Roles } from './decorators/roles.decorator.js';
 import {
   ActivateAccountDto,
   CheckTokenDto,
+  IssueTokenDto,
   LoginDto,
   ResetPasswordDto,
 } from './dto/auth.dto.js';
+import { JwtGuard } from './guards/jwt-auth.guard.js';
+import { RolesGuard } from './guards/roles.guard.js';
 
 @Controller('auth')
 export class AuthController {
@@ -113,6 +118,22 @@ export class AuthController {
     this.clearRefreshCookie(res, AUTH_CONSTANTS.REFRESH_COOKIE);
     if (!refreshToken) return { message: 'Logged out successfully' };
     return this.authService.logout(refreshToken);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('issue-activation-token')
+  @UseGuards(JwtGuard, RolesGuard)
+  @Roles([EmployeeRole.ADMIN, EmployeeRole.HRD])
+  issueActivationToken(@Body() dto: IssueTokenDto) {
+    return this.authService.issueActivationToken(dto);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('issue-reset-password-token')
+  @UseGuards(JwtGuard, RolesGuard)
+  @Roles([EmployeeRole.ADMIN, EmployeeRole.HRD])
+  issueResetPasswordToken(@Body() dto: IssueTokenDto) {
+    return this.authService.issueResetPasswordToken(dto);
   }
 
   private setRefreshCookie(
