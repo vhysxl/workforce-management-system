@@ -43,10 +43,9 @@ export class Employee {
     type: 'varchar',
     length: 16,
     unique: true,
-    nullable: true,
     select: false,
   })
-  nik: string | null;
+  nik: string;
 
   @Column({ type: 'varchar', length: 20 })
   phone_number: string;
