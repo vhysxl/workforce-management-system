@@ -1,69 +1,72 @@
-import { Transform } from 'class-transformer';
 import {
   IsDateString,
+  IsDefined,
   IsEmail,
   IsEnum,
   IsNotEmpty,
+  IsNumberString,
   IsOptional,
+  IsPhoneNumber,
   IsString,
   Length,
+  Matches,
   MaxLength,
 } from 'class-validator';
 
-import { EmployeeRole } from '@app/common';
+import {
+  EmployeeRole,
+  ToIndonesianPhoneNumber,
+  ToLowerCaseTrim,
+  ToTitleCaseTrim,
+} from '@app/common';
 import { MaritalStatus, Religion } from '../entities/employee.entity.js';
 
 export class CreateEmployeeDto {
+  @ToTitleCaseTrim()
   @IsString()
   @IsNotEmpty()
   @MaxLength(150)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   full_name: string;
 
+  @ToLowerCaseTrim()
   @IsEmail()
-  @IsNotEmpty()
-  @MaxLength(150)
-  @Transform(({ value }) =>
-    typeof value === 'string' ? value.trim().toLowerCase() : value,
-  )
+  @MaxLength(50)
   email: string;
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
-  address?: string;
+  @MaxLength(500)
+  address?: string | null;
 
-  @IsNotEmpty()
-  @IsString()
-  @Length(16, 16, { message: 'NIK must be exactly 16 characters' })
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsDefined()
+  @IsNumberString({ no_symbols: true })
+  @Length(16, 16)
   nik: string;
 
+  @ToIndonesianPhoneNumber()
   @IsString()
-  @IsNotEmpty()
   @MaxLength(20)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsPhoneNumber('ID')
   phone_number: string;
 
-  @IsOptional()
   @IsEnum(EmployeeRole)
-  role?: EmployeeRole;
+  role: EmployeeRole;
 
+  @ToTitleCaseTrim()
   @IsString()
   @IsNotEmpty()
-  @MaxLength(100)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @MaxLength(255)
   birth_place: string;
 
-  @IsDateString()
-  @IsNotEmpty()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  @IsDateString({ strict: true })
   birth_date: string;
 
   @IsOptional()
   @IsEnum(MaritalStatus)
-  marital_status?: MaritalStatus;
+  marital_status?: MaritalStatus | null;
 
   @IsOptional()
   @IsEnum(Religion)
-  religion?: Religion;
+  religion?: Religion | null;
 }

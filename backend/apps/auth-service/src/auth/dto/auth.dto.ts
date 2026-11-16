@@ -9,8 +9,7 @@ import {
   MaxLength,
 } from 'class-validator';
 
-import { EmployeeRole } from '@app/common';
-import { ToLowerCaseTrim } from '../../common/decorators/to-lower-case.decorator.js';
+import { EmployeeRole, ToLowerCaseTrim } from '@app/common';
 
 export class CheckTokenDto {
   @IsString()

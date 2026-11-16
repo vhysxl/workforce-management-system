@@ -45,7 +45,7 @@ export class EmployeesService {
             address: dto.address ?? null,
             nik: dto.nik,
             phone_number: dto.phone_number,
-            role: dto.role ?? EmployeeRole.EMPLOYEE,
+            role: dto.role,
             birth_place: dto.birth_place,
             birth_date: dto.birth_date,
             marital_status: dto.marital_status ?? null,
