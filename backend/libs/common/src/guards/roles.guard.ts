@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
-import { ERROR_MESSAGES } from '@app/common';
+import { ERROR_MESSAGES } from '../constants/error-messages.constant.js';
 import { Roles } from '../decorators/roles.decorator.js';
 import type { AuthenticatedRequest } from './jwt-auth.guard.js';
 

@@ -14,10 +14,15 @@ import {
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
 
-import { EmployeeRole, ERROR_MESSAGES } from '@app/common';
+import {
+  EmployeeRole,
+  ERROR_MESSAGES,
+  JwtGuard,
+  Roles,
+  RolesGuard,
+} from '@app/common';
 import { AUTH_CONSTANTS } from './auth.constants.js';
 import { AuthService } from './auth.service.js';
-import { Roles } from './decorators/roles.decorator.js';
 import {
   ActivateAccountDto,
   CheckTokenDto,
@@ -25,8 +30,6 @@ import {
   LoginDto,
   ResetPasswordDto,
 } from './dto/auth.dto.js';
-import { JwtGuard } from './guards/jwt-auth.guard.js';
-import { RolesGuard } from './guards/roles.guard.js';
 
 @Controller('auth')
 export class AuthController {

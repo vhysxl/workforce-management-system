@@ -6,11 +6,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-export enum EmployeeRole {
-  EMPLOYEE = 'employee',
-  HRD = 'hrd',
-  ADMIN = 'admin',
-}
+import { EmployeeRole } from '@app/common';
 
 export enum MaritalStatus {
   SINGLE = 'single',
@@ -39,12 +35,6 @@ export class Employee {
 
   @Column({ unique: true })
   email: string;
-
-  @Column({ select: false, nullable: true })
-  password_hash: string;
-
-  @Column({ type: 'varchar', length: 255, nullable: true, select: false })
-  refresh_token_hash: string | null;
 
   @Column({ type: 'text', nullable: true })
   address: string | null;

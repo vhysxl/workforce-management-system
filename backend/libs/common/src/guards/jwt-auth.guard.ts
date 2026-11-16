@@ -9,7 +9,8 @@ import { JwtService } from '@nestjs/jwt';
 
 import type { Request } from 'express';
 
-import { EmployeeRole, ERROR_MESSAGES } from '@app/common';
+import { ERROR_MESSAGES } from '../constants/error-messages.constant.js';
+import { EmployeeRole } from '../enums/employee-role.enum.js';
 
 export interface AccessTokenPayload {
   sub: string;
@@ -48,7 +49,6 @@ export class JwtGuard implements CanActivate {
         tokenJwt,
         {
           secret,
-          algorithms: ['HS256'],
         },
       );
     } catch {
@@ -60,12 +60,12 @@ export class JwtGuard implements CanActivate {
     }
 
     request.user = payload;
+
     return true;
   }
 
   private extractTokenFromHeader(request: Request): string | undefined {
-    const [type, token, extra] =
-      request.headers.authorization?.trim().split(/\s+/) ?? [];
-    return type?.toLowerCase() === 'bearer' && !extra ? token : undefined;
+    const [type, token] = request.headers.authorization?.split(' ') ?? [];
+    return type === 'Bearer' ? token : undefined;
   }
 }

@@ -7,7 +7,6 @@ import { AppService } from './app.service.js';
 import { AuthModule } from './auth/auth.module.js';
 import configuration from './config/configuration.js';
 import { mySqlConfig } from './config/database.config.js';
-import { EmployeesModule } from './employees/employees.module.js';
 
 @Module({
   imports: [
@@ -21,7 +20,6 @@ import { EmployeesModule } from './employees/employees.module.js';
     }),
 
     AuthModule,
-    EmployeesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
