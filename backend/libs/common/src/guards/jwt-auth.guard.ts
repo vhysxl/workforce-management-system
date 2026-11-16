@@ -1,0 +1,71 @@
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+
+import type { Request } from 'express';
+
+import { ERROR_MESSAGES } from '../constants/error-messages.constant.js';
+import { EmployeeRole } from '../enums/employee-role.enum.js';
+
+export interface AccessTokenPayload {
+  sub: string;
+  role: EmployeeRole;
+  email: string;
+  name?: string;
+  type: 'access';
+  iat: number;
+  exp: number;
+}
+
+export interface AuthenticatedRequest extends Request {
+  user: AccessTokenPayload;
+}
+
+@Injectable()
+export class JwtGuard implements CanActivate {
+  constructor(
+    private jwtService: JwtService,
+    private configService: ConfigService,
+  ) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+    const tokenJwt = this.extractTokenFromHeader(request);
+
+    if (!tokenJwt) {
+      throw new UnauthorizedException(ERROR_MESSAGES.AUTH.MISSING_ACCESS_TOKEN);
+    }
+
+    const secret = this.configService.getOrThrow<string>('JWT_SECRET');
+    let payload: AccessTokenPayload;
+
+    try {
+      payload = await this.jwtService.verifyAsync<AccessTokenPayload>(
+        tokenJwt,
+        {
+          secret,
+        },
+      );
+    } catch {
+      throw new UnauthorizedException(ERROR_MESSAGES.AUTH.INVALID_ACCESS_TOKEN);
+    }
+
+    if (payload.type !== 'access') {
+      throw new UnauthorizedException(ERROR_MESSAGES.AUTH.INVALID_ACCESS_TOKEN);
+    }
+
+    request.user = payload;
+
+    return true;
+  }
+
+  private extractTokenFromHeader(request: Request): string | undefined {
+    const [type, token] = request.headers.authorization?.split(' ') ?? [];
+    return type === 'Bearer' ? token : undefined;
+  }
+}

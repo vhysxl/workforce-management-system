@@ -5,11 +5,12 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: workforce_management_system
+      MYSQL_DATABASE: workforce_auth
     ports:
       - '3306:3306'
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
 
 volumes:
   mysql_data:
