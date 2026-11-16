@@ -8,6 +8,8 @@ export const ERROR_MESSAGES = {
     ALREADY_DEACTIVATED: 'Employee account is already deactivated',
     REGISTRATION_FAILED:
       'Failed to process employee registration. Please try again later.',
+    UPDATE_FAILED:
+      'Failed to process employee update. Please try again later.',
     DEACTIVATION_FAILED:
       'Failed to process employee deactivation. Please try again later.',
     ACTIVATION_FAILED:

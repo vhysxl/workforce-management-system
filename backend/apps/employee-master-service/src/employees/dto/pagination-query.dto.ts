@@ -1,7 +1,8 @@
-import {  Type } from 'class-transformer';
+import { Type } from 'class-transformer';
 import {
-  IsBoolean,
+  IsIn,
   IsInt,
+  IsNumber,
   IsOptional,
   IsString,
   Max,
@@ -27,10 +28,14 @@ export class PaginationQueryDto {
   search?: string;
 
   @IsOptional()
-  @IsBoolean()
-  is_activated?: boolean;
+  @Type(() => Number)
+  @IsNumber()
+  @IsIn([0, 1])
+  is_activated?: number;
 
   @IsOptional()
-  @IsBoolean()
-  is_deactivated?: boolean;
+  @Type(() => Number)
+  @IsNumber()
+  @IsIn([0, 1])
+  is_deactivated?: number;
 }

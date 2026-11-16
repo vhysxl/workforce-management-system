@@ -2,6 +2,7 @@ import {
   IsEmail,
   IsEnum,
   IsNotEmpty,
+  IsOptional,
   IsString,
   IsStrongPassword,
   IsUUID,
@@ -72,4 +73,16 @@ export class CreateCredentialDto {
 
   @IsEnum(EmployeeRole)
   role: EmployeeRole;
+}
+
+export class UpdateCredentialDto {
+  @IsOptional()
+  @ToLowerCaseTrim()
+  @MaxLength(150)
+  @IsEmail()
+  email?: string;
+
+  @IsOptional()
+  @IsEnum(EmployeeRole)
+  role?: EmployeeRole;
 }

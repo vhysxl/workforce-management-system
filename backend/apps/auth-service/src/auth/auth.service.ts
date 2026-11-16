@@ -27,6 +27,7 @@ import {
   IssueTokenDto,
   LoginDto,
   ResetPasswordDto,
+  UpdateCredentialDto,
 } from './dto/auth.dto.js';
 import { ActivationToken } from './entities/activation-token.entity.js';
 import { EmployeeAuthCredential } from './entities/employee-auth-credential.entity.js';
@@ -355,6 +356,44 @@ export class AuthService {
     });
   }
 
+  async updateCredential(
+    employeeId: string,
+    dto: UpdateCredentialDto,
+  ): Promise<{ message: string }> {
+    return this.credentialRepository.manager.transaction(async (manager) => {
+      const credential = await manager.findOne(EmployeeAuthCredential, {
+        where: { employee_id: employeeId },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!credential) {
+        throw new NotFoundException(ERROR_MESSAGES.EMPLOYEE.NOT_FOUND);
+      }
+
+      if (dto.email && dto.email !== credential.email) {
+        const existing = await manager.findOne(EmployeeAuthCredential, {
+          where: { email: dto.email },
+        });
+
+        if (existing && existing.employee_id !== employeeId) {
+          throw new ConflictException(
+            ERROR_MESSAGES.AUTH.CREDENTIAL_ALREADY_EXISTS,
+          );
+        }
+
+        credential.email = dto.email;
+      }
+
+      if (dto.role) {
+        credential.role = dto.role;
+      }
+
+      await manager.save(EmployeeAuthCredential, credential);
+
+      return { message: 'Credential updated successfully' };
+    });
+  }
+
   async deactivateCredential(
     employeeId: string,
   ): Promise<{ message: string }> {
@@ -403,7 +442,7 @@ export class AuthService {
 
       if (
         purpose === ActivationTokenPurpose.ACTIVATION_ACCOUNT &&
-        credential.is_active
+        (credential.is_active || credential.password_hash)
       ) {
         throw new ConflictException(
           ERROR_MESSAGES.AUTH.ACCOUNT_ALREADY_ACTIVATED,
@@ -414,6 +453,9 @@ export class AuthService {
         purpose === ActivationTokenPurpose.RESET_PASSWORD &&
         !credential.is_active
       ) {
+        if (credential.password_hash) {
+          throw new ForbiddenException(ERROR_MESSAGES.EMPLOYEE.DEACTIVATED);
+        }
         throw new ConflictException(ERROR_MESSAGES.EMPLOYEE.NOT_ACTIVATED);
       }
 

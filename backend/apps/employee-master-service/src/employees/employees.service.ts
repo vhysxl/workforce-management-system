@@ -2,11 +2,8 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
-  InternalServerErrorException,
-  Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { QueryFailedError, Repository } from 'typeorm';
 
@@ -14,6 +11,7 @@ import {
   EmployeeRole,
   ERROR_MESSAGES,
 } from '@app/common';
+import { AuthClientService } from './auth-client.service.js';
 import { CreateEmployeeDto } from './dto/create-employee.dto.js';
 import { PaginationQueryDto } from './dto/pagination-query.dto.js';
 import { UpdateEmployeeDto } from './dto/update-employee.dto.js';
@@ -21,25 +19,17 @@ import { Employee } from './entities/employee.entity.js';
 
 @Injectable()
 export class EmployeesService {
-  private readonly logger = new Logger(EmployeesService.name);
-
   constructor(
     @InjectRepository(Employee)
     private readonly employeesRepository: Repository<Employee>,
-    private readonly configService: ConfigService,
+    private readonly authClient: AuthClientService,
   ) {}
 
   async create(dto: CreateEmployeeDto) {
-    const authUrl =
-      this.configService.get<string>('services.auth.url') ??
-      'http://localhost:3001/api';
-
     try {
       return await this.employeesRepository.manager.transaction(
         async (manager) => {
-          const whereClause = dto.nik
-            ? [{ email: dto.email }, { nik: dto.nik }]
-            : [{ email: dto.email }];
+          const whereClause = [{ email: dto.email }, { nik: dto.nik }];
 
           const existing = await manager.findOne(Employee, {
             where: whereClause,
@@ -53,7 +43,7 @@ export class EmployeesService {
             full_name: dto.full_name,
             email: dto.email,
             address: dto.address ?? null,
-            nik: dto.nik ?? null,
+            nik: dto.nik,
             phone_number: dto.phone_number,
             role: dto.role ?? EmployeeRole.EMPLOYEE,
             birth_place: dto.birth_place,
@@ -65,42 +55,11 @@ export class EmployeesService {
           const savedEmployee = await manager.save(Employee, employee);
 
           // Downstream call to auth-service
-          let authRes: Response;
-          try {
-            authRes = await fetch(`${authUrl}/auth/internal/credentials`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                employee_id: savedEmployee.id,
-                email: savedEmployee.email,
-                role: savedEmployee.role,
-              }),
-            });
-          } catch (err) {
-            this.logger.error(
-              ERROR_MESSAGES.SERVICE.UNREACHABLE('Auth Service'),
-              err,
-            );
-            throw new InternalServerErrorException(
-              ERROR_MESSAGES.EMPLOYEE.REGISTRATION_FAILED,
-            );
-          }
-
-          if (!authRes.ok) {
-            if (authRes.status === 409) {
-              throw new ConflictException(
-                ERROR_MESSAGES.AUTH.CREDENTIAL_ALREADY_EXISTS,
-              );
-            }
-            this.logger.error(
-              ERROR_MESSAGES.SERVICE.FAILED('Auth Service', authRes.status),
-            );
-            throw new InternalServerErrorException(
-              ERROR_MESSAGES.EMPLOYEE.REGISTRATION_FAILED,
-            );
-          }
+          await this.authClient.createCredential({
+            employee_id: savedEmployee.id,
+            email: savedEmployee.email,
+            role: savedEmployee.role,
+          });
 
           return this.toDetailResponse(savedEmployee);
         },
@@ -133,7 +92,7 @@ export class EmployeesService {
 
     if (is_activated !== undefined) {
       qb.andWhere(
-        is_activated
+        is_activated === 1
           ? 'employee.activated_at IS NOT NULL'
           : 'employee.activated_at IS NULL',
       );
@@ -141,7 +100,7 @@ export class EmployeesService {
 
     if (is_deactivated !== undefined) {
       qb.andWhere(
-        is_deactivated
+        is_deactivated === 1
           ? 'employee.deactivated_at IS NOT NULL'
           : 'employee.deactivated_at IS NULL',
       );
@@ -194,13 +153,21 @@ export class EmployeesService {
     try {
       return await this.employeesRepository.manager.transaction(
         async (manager) => {
-          const employee = await manager.findOne(Employee, {
-            where: { id },
-            lock: { mode: 'pessimistic_write' },
-          });
+          const employee = await manager
+            .createQueryBuilder(Employee, 'employee')
+            .setLock('pessimistic_write')
+            .addSelect('employee.nik')
+            .where('employee.id = :id', { id })
+            .getOne();
 
           if (!employee) {
             throw new NotFoundException(ERROR_MESSAGES.EMPLOYEE.NOT_FOUND);
+          }
+
+          if (employee.deactivated_at) {
+            throw new ConflictException(
+              ERROR_MESSAGES.EMPLOYEE.ALREADY_DEACTIVATED,
+            );
           }
 
           const allowedRoles =
@@ -217,10 +184,13 @@ export class EmployeesService {
             throw new ForbiddenException(ERROR_MESSAGES.AUTH.INSUFFICIENT_ROLE);
           }
 
+          const isEmailChanged = dto.email && dto.email !== employee.email;
+          const isRoleChanged = targetRole !== employee.role;
+
           employee.full_name = dto.full_name;
           employee.email = dto.email;
+          employee.nik = dto.nik;
           employee.address = dto.address ?? null;
-          employee.nik = dto.nik ?? null;
           employee.phone_number = dto.phone_number;
           employee.role = targetRole;
           employee.birth_place = dto.birth_place;
@@ -229,6 +199,16 @@ export class EmployeesService {
           employee.religion = dto.religion ?? null;
 
           const updated = await manager.save(Employee, employee);
+
+          // Downstream sync to auth-service if email or role changed
+          if (isEmailChanged || isRoleChanged) {
+            const authPayload: { email?: string; role?: EmployeeRole } = {};
+            if (isEmailChanged) authPayload.email = dto.email;
+            if (isRoleChanged) authPayload.role = targetRole;
+
+            await this.authClient.updateCredential(id, authPayload);
+          }
+
           return this.toDetailResponse(updated);
         },
       );
@@ -255,10 +235,6 @@ export class EmployeesService {
         ERROR_MESSAGES.EMPLOYEE.CANNOT_DEACTIVATE_SELF,
       );
     }
-
-    const authUrl =
-      this.configService.get<string>('services.auth.url') ??
-      'http://localhost:3001/api';
 
     return await this.employeesRepository.manager.transaction(
       async (manager) => {
@@ -290,35 +266,7 @@ export class EmployeesService {
         const updated = await manager.save(Employee, employee);
 
         // Downstream call to auth-service
-        let authRes: Response;
-        try {
-          authRes = await fetch(
-            `${authUrl}/auth/internal/credentials/${id}/deactivate`,
-            {
-              method: 'PATCH',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-            },
-          );
-        } catch (err) {
-          this.logger.error(
-            ERROR_MESSAGES.SERVICE.UNREACHABLE('Auth Service'),
-            err,
-          );
-          throw new InternalServerErrorException(
-            ERROR_MESSAGES.EMPLOYEE.DEACTIVATION_FAILED,
-          );
-        }
-
-        if (!authRes.ok) {
-          this.logger.error(
-            ERROR_MESSAGES.SERVICE.FAILED('Auth Service', authRes.status),
-          );
-          throw new InternalServerErrorException(
-            ERROR_MESSAGES.EMPLOYEE.DEACTIVATION_FAILED,
-          );
-        }
+        await this.authClient.deactivateCredential(id);
 
         return this.toResponse(updated);
       },
@@ -365,7 +313,7 @@ export class EmployeesService {
       full_name: employee.full_name,
       email: employee.email,
       address: employee.address,
-      nik: employee.nik ?? null,
+      nik: employee.nik,
       phone_number: employee.phone_number,
       role: employee.role,
       birth_place: employee.birth_place,

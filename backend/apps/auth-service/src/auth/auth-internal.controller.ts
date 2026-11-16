@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 
 import { AuthService } from './auth.service.js';
-import { CreateCredentialDto } from './dto/auth.dto.js';
+import { CreateCredentialDto, UpdateCredentialDto } from './dto/auth.dto.js';
 
 @Controller('auth/internal')
 export class AuthInternalController {
@@ -20,6 +20,15 @@ export class AuthInternalController {
   @Post('credentials')
   createCredential(@Body() dto: CreateCredentialDto) {
     return this.authService.createCredential(dto);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Patch('credentials/:employeeId')
+  updateCredential(
+    @Param('employeeId', new ParseUUIDPipe()) employeeId: string,
+    @Body() dto: UpdateCredentialDto,
+  ) {
+    return this.authService.updateCredential(employeeId, dto);
   }
 
   @HttpCode(HttpStatus.OK)

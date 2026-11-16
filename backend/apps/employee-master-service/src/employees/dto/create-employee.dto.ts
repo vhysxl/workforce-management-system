@@ -33,11 +33,11 @@ export class CreateEmployeeDto {
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   address?: string;
 
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
   @Length(16, 16, { message: 'NIK must be exactly 16 characters' })
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
-  nik?: string;
+  nik: string;
 
   @IsString()
   @IsNotEmpty()
