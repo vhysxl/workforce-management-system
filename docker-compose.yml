@@ -1,16 +1,52 @@
 services:
   db:
     image: mysql:latest
-    container_name: workforce_db
-    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: workforce_auth
     ports:
-      - '3306:3306'
+      - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+  employee-master-service:
+    build: ./backend
+    restart: on-failure
+    command: ["node", "dist/apps/employee-master-service/main.js"]
+    environment:
+      DB_HOST: db
+      AUTH_SERVICE_URL: http://auth-service:3001/api
+    ports:
+      - "3002:3002"
+    depends_on:
+      - db
+
+  auth-service:
+    build: ./backend
+    restart: on-failure
+    command: ["node", "dist/apps/auth-service/main.js"]
+    environment:
+      DB_HOST: db
+      EMPLOYEE_SERVICE_URL: http://employee-master-service:3002/api
+    ports:
+      - "3001:3001"
+    depends_on:
+      - db
+      - employee-master-service
+
+  attendance-service:
+    build: ./backend
+    restart: on-failure
+    command: ["node", "dist/apps/attendance-service/main.js"]
+    environment:
+      DB_HOST: db
+    ports:
+      - "3003:3003"
+    volumes:
+      - attendance_uploads:/app/uploads/attendance
+    depends_on:
+      - db
 
 volumes:
   mysql_data:
+  attendance_uploads:

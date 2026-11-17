@@ -2,7 +2,10 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 
+import { DataSource } from 'typeorm';
+
 import { AppModule } from './app.module.js';
+import { seedAdmin } from './seed-admin.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -27,5 +30,6 @@ async function bootstrap() {
   const port = config.getOrThrow<number>('app.port');
 
   await app.listen(port);
+  await seedAdmin(app.get(DataSource));
 }
 await bootstrap();
