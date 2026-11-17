@@ -1,4 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
+import { formatTime } from '../lib/date';
 
 interface AttendanceTimeCardProps {
   label: string;
@@ -15,11 +16,7 @@ export default function AttendanceTimeCard({ label, icon: Icon, time, caption }:
         <span>{label}</span>
       </div>
       <p className="text-2xl font-semibold text-secondary tracking-tight">
-        {time ? new Date(time).toLocaleTimeString('en-US', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false,
-        }) : '--:--'}
+        {time ? formatTime(time) : '--:--'}
       </p>
       <p className="text-xs text-supporting">{caption ?? (time ? 'Recorded' : 'Not recorded')}</p>
     </div>

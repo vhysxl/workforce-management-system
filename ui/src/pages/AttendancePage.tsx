@@ -143,7 +143,7 @@ export default function AttendancePage() {
               label="Clock Out"
               icon={LogOut}
               time={attendance?.clock_out}
-              caption={attendance && attendance.type !== 'wfo' ? 'Not required' : undefined}
+              caption={attendance?.type === 'wfh' ? 'Not required' : attendance?.clock_out ? `Overtime ${attendance.overtime_minutes} minutes` : undefined}
             />
           </div>
 
