@@ -22,6 +22,20 @@ export default function ProfilePage() {
   const [today] = useState(getTodayDate);
   const [year, month] = today.split('-').map(Number);
   const isAdmin = user?.role === 'admin';
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const signOut = async () => {
+    setIsLoggingOut(true);
+    try {
+      const response = await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+      if (!response.ok) throw new Error('Could not sign out. Please try again.');
+      logout();
+    } catch (error) {
+      setProfileError((error as Error).message);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   useEffect(() => {
     requestProfile()
@@ -112,7 +126,7 @@ export default function ProfilePage() {
       )}
 
       <div className="flex justify-end border-t border-white/5 pt-6">
-        <Button variant="danger" onClick={logout}>Logout</Button>
+        <Button variant="danger" isLoading={isLoggingOut} onClick={signOut}>Logout</Button>
       </div>
     </section>
   );

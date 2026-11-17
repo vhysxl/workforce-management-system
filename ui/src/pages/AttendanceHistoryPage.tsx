@@ -22,9 +22,12 @@ export default function AttendanceHistoryPage() {
   const navigate = useNavigate();
   const [today] = useState(getTodayDate);
   const [currentYear, currentMonth] = today.split('-').map(Number);
-  const year = Number(search.get('year') ?? currentYear);
+  const requestedYear = Number(search.get('year') ?? currentYear);
+  const year = Number.isInteger(requestedYear) && requestedYear >= 2000 && requestedYear <= 2100 ? requestedYear : currentYear;
   const monthParam = search.get('month');
-  const month = monthParam === 'all' ? '' : monthParam ?? String(currentMonth);
+  const month = monthParam === 'all' ? '' :
+    monthParam !== null && Number.isInteger(Number(monthParam)) && Number(monthParam) >= 1 && Number(monthParam) <= 12
+      ? String(Number(monthParam)) : String(currentMonth);
   const filters = { year, month };
   const [history, setHistory] = useState<AttendanceHistory | null>(null);
   const [isLoading, setIsLoading] = useState(true);

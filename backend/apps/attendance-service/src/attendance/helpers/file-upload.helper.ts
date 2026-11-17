@@ -5,7 +5,13 @@ import type { AuthenticatedRequest } from '@app/common';
 import { diskStorage } from 'multer';
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync } from 'node:fs';
-import { extname, join } from 'node:path';
+import { join } from 'node:path';
+
+const imageExtensions: Record<string, string> = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
+};
 
 export const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -14,7 +20,7 @@ export const imageFileFilter = (
   file: Express.Multer.File,
   callback: (error: Error | null, acceptFile: boolean) => void,
 ) => {
-  if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/i)) {
+  if (!Object.hasOwn(imageExtensions, file.mimetype)) {
     return callback(
       new BadRequestException(ERROR_MESSAGES.ATTENDANCE.INVALID_IMAGE_FILE),
       false,
@@ -41,7 +47,11 @@ export function createAttendanceDiskStorage(
     filename: (req, file, callback) => {
       const attendanceId = randomUUID();
       (req as unknown as { attendanceId?: string }).attendanceId = attendanceId;
-      const ext = extname(file.originalname).toLowerCase() || '.jpg';
+      const ext = imageExtensions[file.mimetype];
+      if (!ext) {
+        callback(new BadRequestException(ERROR_MESSAGES.ATTENDANCE.INVALID_IMAGE_FILE), '');
+        return;
+      }
       callback(null, `${attendanceId}${ext}`);
     },
   });

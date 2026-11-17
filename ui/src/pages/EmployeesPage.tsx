@@ -25,22 +25,30 @@ const statusFilters: Record<EmployeeQuery['status'], Record<string, string>> = {
 function EmployeeDirectory({ actorRole }: { actorRole: ManagerRole }) {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
-  const page = Number(params.get('page') ?? 1);
+  const requestedPage = Number(params.get('page') ?? 1);
+  const page = Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
   const search = params.get('search') ?? '';
-  const status = (params.get('status') ?? 'all') as EmployeeQuery['status'];
+  const requestedStatus = params.get('status') ?? 'all';
+  const status: EmployeeQuery['status'] = Object.hasOwn(statusFilters, requestedStatus)
+    ? requestedStatus as EmployeeQuery['status'] : 'all';
   const query = { page, search, status };
   const [list, setList] = useState<EmployeeListResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [revision, setRevision] = useState(0);
 
   useEffect(() => {
+    const controller = new AbortController();
+    setIsLoading(true);
+    setError(null);
     const params = new URLSearchParams({ page: String(page), limit: '10', ...statusFilters[status] });
     if (search) params.set('search', search);
-    requestEmployeeApi<EmployeeListResponse>(`/employees?${params}`)
-      .then(setList)
-      .catch((error) => setError(error.message))
-      .finally(() => setIsLoading(false));
-  }, [page, search, status]);
+    requestEmployeeApi<EmployeeListResponse>(`/employees?${params}`, { signal: controller.signal })
+      .then((result) => { if (!controller.signal.aborted) setList(result); })
+      .catch((error) => { if (!controller.signal.aborted) { setList(null); setError(error.message); } })
+      .finally(() => { if (!controller.signal.aborted) setIsLoading(false); });
+    return () => controller.abort();
+  }, [page, search, status, revision]);
 
   const loadList = (nextQuery: EmployeeQuery) => {
     const params = new URLSearchParams({ page: String(nextQuery.page), status: nextQuery.status });
@@ -77,6 +85,7 @@ function EmployeeDirectory({ actorRole }: { actorRole: ManagerRole }) {
       </form>
 
       <ErrorAlert error={error} onDismiss={() => setError(null)} />
+      {error && <Button type="button" variant="secondary" onClick={() => setRevision((value) => value + 1)}>Try again</Button>}
       {isLoading && <p role="status" className="text-sm text-supporting">Loading employees...</p>}
       {list && (
         <>
@@ -105,7 +114,7 @@ function EmployeeDirectory({ actorRole }: { actorRole: ManagerRole }) {
                       <td className="px-4 py-3"><EmployeeStatus employee={employee} /></td>
                       <td className="px-4 py-3 whitespace-nowrap">{formatDate(employee.created_at)}</td>
                       <td className="px-4 py-3">
-                        <EmployeeActions employee={employee} actorRole={actorRole} onDeactivated={() => loadList({ ...query, page: 1 })} />
+                        <EmployeeActions employee={employee} actorRole={actorRole} onDeactivated={() => { if (page === 1) setRevision((value) => value + 1); else loadList({ ...query, page: 1 }); }} />
                       </td>
                     </tr>
                   ))}

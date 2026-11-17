@@ -29,7 +29,7 @@ export interface EmployeeListResponse {
 
 export function canManageEmployee(actorRole: ManagerRole, targetRole: EmployeeRole): boolean {
   if (actorRole === 'admin') return targetRole === 'employee' || targetRole === 'hrd';
-  return targetRole === 'employee';
+  return actorRole === 'hrd' && targetRole === 'employee';
 }
 
 export async function requestEmployeeApi<T>(path: string, options: RequestInit = {}): Promise<T> {

@@ -12,7 +12,7 @@ import { ERROR_MESSAGES, EmployeeRole } from '@app/common';
 import type { AccessTokenPayload } from '@app/common';
 import { existsSync, unlinkSync } from 'node:fs';
 import { basename, parse, resolve } from 'node:path';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 
 import { AttendanceCalendarQueryDto } from './dto/attendance-calendar-query.dto.js';
 import { CreateLeaveDto } from './dto/create-leave.dto.js';
@@ -61,7 +61,7 @@ export class AttendanceService {
       detail: null,
     });
 
-    const saved = await this.attendanceRepository.save(attendance);
+    const saved = await this.saveAttendance(attendance);
     return formatAttendanceResponse(saved);
   }
 
@@ -138,7 +138,7 @@ export class AttendanceService {
       detail: detail ?? null,
     });
 
-    const saved = await this.attendanceRepository.save(attendance);
+    const saved = await this.saveAttendance(attendance, file.path);
     return formatAttendanceResponse(saved);
   }
 
@@ -180,7 +180,7 @@ export class AttendanceService {
       detail: dto.detail,
     });
 
-    const saved = await this.attendanceRepository.save(attendance);
+    const saved = await this.saveAttendance(attendance, file.path);
     return formatAttendanceResponse(saved);
   }
 
@@ -249,6 +249,10 @@ export class AttendanceService {
     targetEmployeeId: string,
     filename: string,
   ): string {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetEmployeeId) ||
+      filename !== basename(filename) || filename.includes('\\')) {
+      throw new NotFoundException(ERROR_MESSAGES.ATTENDANCE.ATTACHMENT_NOT_FOUND);
+    }
     const isOwner = user.sub === targetEmployeeId;
     const isHrdOrAdmin =
       user.role === EmployeeRole.HRD || user.role === EmployeeRole.ADMIN;
@@ -275,6 +279,19 @@ export class AttendanceService {
     }
 
     return resolvedPath;
+  }
+
+  private async saveAttendance(attendance: Attendance, uploadedPath?: string): Promise<Attendance> {
+    try {
+      return await this.attendanceRepository.save(attendance);
+    } catch (error) {
+      this.cleanUpUploadedFile(uploadedPath);
+      if (error instanceof QueryFailedError &&
+        (error.driverError as { code?: string }).code === 'ER_DUP_ENTRY') {
+        throw new ConflictException(ERROR_MESSAGES.ATTENDANCE.ALREADY_RECORDED_TODAY);
+      }
+      throw error;
+    }
   }
 
   private getTodayDateString(d: Date = new Date()): string {
