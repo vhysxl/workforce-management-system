@@ -275,6 +275,7 @@ export class EmployeesService {
     }
 
     employee.activated_at = new Date();
+    employee.deactivated_at = null;
     await this.employeesRepository.save(employee);
 
     return { message: 'Employee activated successfully' };

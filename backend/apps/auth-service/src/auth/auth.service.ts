@@ -455,7 +455,7 @@ export class AuthService {
 
       if (
         purpose === ActivationTokenPurpose.ACTIVATION_ACCOUNT &&
-        (credential.is_active || credential.password_hash)
+        credential.is_active
       ) {
         throw new ConflictException(
           ERROR_MESSAGES.AUTH.ACCOUNT_ALREADY_ACTIVATED,

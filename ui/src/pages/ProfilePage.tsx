@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router';
 import Avatar from '../components/Avatar';
 import Button from '../components/Button';
 import ErrorAlert from '../components/ErrorAlert';
 import AttendanceCalendar from '../components/AttendanceCalendar';
 import AttendanceSummary from '../components/AttendanceSummary';
 import { requestProfile, type EmployeeProfile } from '../lib/profile';
-import { requestAttendance, type Attendance, type AttendanceHistory } from '../lib/attendance';
+import { requestAttendance, type AttendanceHistory } from '../lib/attendance';
 import { formatDate, formatDateTime, getTodayDate } from '../lib/date';
 import { useAuthStore } from '../stores/authStore';
-import AttendanceDetailPage from './AttendanceDetailPage';
-import AttendanceHistoryPage from './AttendanceHistoryPage';
 
 export default function ProfilePage() {
+  const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const [profile, setProfile] = useState<EmployeeProfile | null>(null);
   const [history, setHistory] = useState<AttendanceHistory | null>(null);
@@ -19,8 +19,6 @@ export default function ProfilePage() {
   const [historyLoading, setHistoryLoading] = useState(true);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [historyError, setHistoryError] = useState<string | null>(null);
-  const [selected, setSelected] = useState<{ date: string; attendance: Attendance | null } | null>(null);
-  const [showHistory, setShowHistory] = useState(false);
   const [today] = useState(getTodayDate);
   const [year, month] = today.split('-').map(Number);
   const isAdmin = user?.role === 'admin';
@@ -39,14 +37,6 @@ export default function ProfilePage() {
       .catch((error) => setHistoryError(error.message))
       .finally(() => setHistoryLoading(false));
   }, [year, month, isAdmin]);
-
-  if (selected) {
-    return <AttendanceDetailPage date={selected.date} attendance={selected.attendance} onBack={() => setSelected(null)} />;
-  }
-
-  if (showHistory) {
-    return <AttendanceHistoryPage onBack={() => setShowHistory(false)} />;
-  }
 
   return (
     <section className="space-y-8">
@@ -94,13 +84,12 @@ export default function ProfilePage() {
         <section className="space-y-5" aria-label="Monthly attendance">
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-base font-semibold">Attendance this month</h2>
-            <button
-              type="button"
-              onClick={() => setShowHistory(true)}
+            <Link
+              to="/profile/attendance"
               className="text-xs text-blue-300 hover:text-blue-200 hover:underline cursor-pointer"
             >
               View more
-            </button>
+            </Link>
           </div>
           <ErrorAlert error={historyError} onDismiss={() => setHistoryError(null)} />
           {historyLoading && <p role="status" className="text-sm text-supporting">Loading attendance...</p>}
@@ -115,7 +104,7 @@ export default function ProfilePage() {
                 month={month}
                 today={today}
                 records={history.data}
-                onSelect={(date, attendance) => setSelected({ date, attendance })}
+                onSelect={(date) => navigate(`/profile/attendance/${date}?from=profile`)}
               />
             </>
           )}

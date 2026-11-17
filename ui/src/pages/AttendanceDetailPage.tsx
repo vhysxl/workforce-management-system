@@ -11,9 +11,10 @@ interface AttendanceDetailPageProps {
   attendance: Attendance | null;
   onBack: () => void;
   backLabel?: string;
+  employeeName?: string;
 }
 
-export default function AttendanceDetailPage({ date, attendance, onBack, backLabel = 'Back to profile' }: AttendanceDetailPageProps) {
+export default function AttendanceDetailPage({ date, attendance, onBack, backLabel = 'Back to profile', employeeName }: AttendanceDetailPageProps) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [imageLoading, setImageLoading] = useState(Boolean(attendance?.attachment_url));
@@ -61,6 +62,7 @@ export default function AttendanceDetailPage({ date, attendance, onBack, backLab
       <div>
         <p className="text-sm text-supporting">{formatDate(date)}</p>
         <h1 className="text-2xl font-bold mt-1">{isLeave ? 'Leave details' : 'Attendance details'}</h1>
+        {employeeName && <p className="text-sm text-supporting mt-2">{employeeName}</p>}
       </div>
 
       {!attendance ? <p className="text-sm text-supporting">No attendance recorded for this date.</p> : (
