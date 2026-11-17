@@ -39,7 +39,7 @@ Gunakan akun admin pada bagian **Akun Seeding** untuk login.
 
 ## Limitasi
 
-- **UI:** beberapa komponen masih mencampur pengambilan data, state, dan tampilan; design system serta pengujian UI perlu ditingkatkan (rushed).
+- **Frontend:** struktur kode, konsistensi tampilan dan code, serta responsivitas masih perlu dirapikan.
 - **Database:** indeks untuk pencarian dan filter belum lengkap; query perlu dioptimalkan untuk data besar.
 - **Ketahanan antarservice:** HTTP sinkron belum dilengkapi circuit breaker, retry dengan backoff, atau message broker; gangguan satu service dapat menggagalkan request terkait.
 - **Keamanan internal:** endpoint internal diblokir di gateway, tetapi komunikasi antarservice belum memakai API key atau mTLS.
