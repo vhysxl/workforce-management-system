@@ -6,7 +6,7 @@ interface AttendanceCalendarProps {
   month: number;
   today: string;
   records: Attendance[];
-  onSelect: (date: string, attendance: Attendance | null) => void;
+  onSelect: (date: string) => void;
 }
 
 const legend: CalendarMarker[] = [
@@ -46,7 +46,7 @@ export default function AttendanceCalendar({ year, month, today, records, onSele
       today={today}
       markers={markers}
       legend={legend}
-      onDateSelect={(date) => onSelect(date, records.find((record) => record.date === date) ?? null)}
+      onDateSelect={onSelect}
     />
   );
 }

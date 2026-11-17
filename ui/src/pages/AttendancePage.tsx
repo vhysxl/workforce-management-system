@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { Navigate, useLocation, useNavigate } from 'react-router';
 import { LogIn, LogOut } from 'lucide-react';
 import AttendanceTimeCard from '../components/AttendanceTimeCard';
 import Button from '../components/Button';
@@ -23,8 +24,10 @@ const actions = {
 };
 
 export default function AttendancePage() {
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
   const [attendance, setAttendance] = useState<Attendance | null>();
-  const [selectedPage, setSelectedPage] = useState<'leave' | 'attendance'>('attendance');
+  const selectedPage = pathname === '/attendance/leave' ? 'leave' : 'attendance';
   const [mode, setMode] = useState<'wfo' | 'wfh'>('wfo');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -71,6 +74,10 @@ export default function AttendancePage() {
     }
   };
 
+  if (attendance && page !== selectedPage) {
+    return <Navigate to={page === 'leave' ? '/attendance/leave' : '/attendance'} replace />;
+  }
+
   return (
     <section className="space-y-8 max-w-2xl mx-auto pt-4" aria-busy={isLoading}>
       <div className="flex items-start justify-between gap-4">
@@ -99,7 +106,7 @@ export default function AttendancePage() {
         <LeavePage
           attendance={attendance}
           onSaved={setAttendance}
-          onBack={() => setSelectedPage('attendance')}
+          onBack={() => navigate('/attendance')}
         />
       )}
 
@@ -111,7 +118,7 @@ export default function AttendancePage() {
               {!attendance && (
                 <button
                   type="button"
-                  onClick={() => setSelectedPage('leave')}
+                  onClick={() => navigate('/attendance/leave')}
                   disabled={isLoading}
                   className="text-xs text-red-400 hover:text-red-300 hover:underline cursor-pointer disabled:opacity-50"
                 >

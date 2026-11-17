@@ -1,69 +1,64 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { Link, useLocation, useNavigate, useOutletContext, useParams, useSearchParams } from 'react-router';
 import { ArrowLeft } from 'lucide-react';
 import AttendanceCalendar from '../components/AttendanceCalendar';
 import AttendanceSummary from '../components/AttendanceSummary';
 import Button from '../components/Button';
 import ErrorAlert from '../components/ErrorAlert';
-import { requestAttendance, type Attendance, type AttendanceHistory } from '../lib/attendance';
+import { requestAttendance, type AttendanceHistory } from '../lib/attendance';
 import { getTodayDate } from '../lib/date';
-import AttendanceDetailPage from './AttendanceDetailPage';
-
-interface AttendanceHistoryPageProps {
-  onBack: () => void;
-}
+import type { EmployeeProfile } from '../lib/profile';
 
 const months = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
-export default function AttendanceHistoryPage({ onBack }: AttendanceHistoryPageProps) {
+export default function AttendanceHistoryPage() {
+  const { employeeId } = useParams();
+  const employee = useOutletContext<EmployeeProfile | undefined>();
+  const [search, setSearch] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [today] = useState(getTodayDate);
   const [currentYear, currentMonth] = today.split('-').map(Number);
-  const [filters, setFilters] = useState({ year: currentYear, month: String(currentMonth) });
+  const year = Number(search.get('year') ?? currentYear);
+  const monthParam = search.get('month');
+  const month = monthParam === 'all' ? '' : monthParam ?? String(currentMonth);
+  const filters = { year, month };
   const [history, setHistory] = useState<AttendanceHistory | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selected, setSelected] = useState<{ date: string; attendance: Attendance | null } | null>(null);
+  const historyPath = employeeId ? `/employees/${employeeId}` : '/my-history';
+  const historyUrl = employeeId ? `/employees/${employeeId}/attendance` : '/profile/attendance';
 
   useEffect(() => {
-    const params = new URLSearchParams({ year: String(filters.year) });
-    if (filters.month) params.set('month', filters.month);
+    const params = new URLSearchParams({ year: String(year) });
+    if (month) params.set('month', month);
 
-    requestAttendance<AttendanceHistory>(`/my-history?${params}`)
+    requestAttendance<AttendanceHistory>(`${historyPath}?${params}`)
       .then(setHistory)
       .catch((error) => setError(error.message))
       .finally(() => setIsLoading(false));
-  }, [filters]);
+  }, [year, month, historyPath]);
 
   const applyFilters = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    setHistory(null);
-    setError(null);
-    setIsLoading(true);
-    setFilters({ year: Number(data.get('year')), month: String(data.get('month')) });
+    setSearch({ year: String(data.get('year')), month: String(data.get('month')) || 'all' });
   };
-
-  if (selected) {
-    return (
-      <AttendanceDetailPage
-        date={selected.date}
-        attendance={selected.attendance}
-        onBack={() => setSelected(null)}
-        backLabel="Back to history"
-      />
-    );
-  }
 
   const visibleMonths = filters.month ? [Number(filters.month)] : months.map((_, index) => index + 1);
 
   return (
     <section className="space-y-8" aria-busy={isLoading}>
-      <button type="button" onClick={onBack} className="flex items-center gap-2 text-sm text-supporting hover:text-secondary cursor-pointer">
-        <ArrowLeft className="w-4 h-4" /> Back to profile
-      </button>
-      <h1 className="text-2xl font-bold tracking-tight">Attendance history</h1>
+      <Link to={employeeId ? `/employees/${employeeId}` : '/profile'} className="flex items-center gap-2 text-sm text-supporting hover:text-secondary cursor-pointer">
+        <ArrowLeft className="w-4 h-4" /> {employee ? 'Back to employee' : 'Back to profile'}
+      </Link>
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Attendance history</h1>
+        {employee && <p className="text-sm text-supporting mt-2">{employee.full_name}</p>}
+      </div>
 
       <form onSubmit={applyFilters}>
         <fieldset disabled={isLoading} className="flex flex-wrap items-end gap-4">
@@ -115,7 +110,7 @@ export default function AttendanceHistoryPage({ onBack }: AttendanceHistoryPageP
                     month={month}
                     today={today}
                     records={history.data.filter((record) => record.date.startsWith(prefix))}
-                    onSelect={(date, attendance) => setSelected({ date, attendance })}
+                    onSelect={(date) => navigate(`${historyUrl}/${date}${location.search}`)}
                   />
                 );
               })}

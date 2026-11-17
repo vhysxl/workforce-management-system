@@ -1,10 +1,10 @@
 import { useState, type FormEvent, type ChangeEvent } from 'react';
 import * as v from 'valibot';
-import { AlertCircle, X } from 'lucide-react';
 import { LoginSchema, type LoginInput, type LoginErrors } from '../lib/validation/auth';
 import { useAuthStore } from '../stores/authStore';
 import Input from '../components/Input';
 import Button from '../components/Button';
+import ErrorAlert from '../components/ErrorAlert';
 
 export default function AuthPage() {
   const [form, setForm] = useState<LoginInput>({ email: '', password: '' });
@@ -40,24 +40,7 @@ export default function AuthPage() {
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-          {apiError && (
-            <div className="flex items-start justify-between gap-2.5 bg-red-600 text-white rounded-lg p-3 text-xs leading-relaxed shadow-sm">
-              <div className="flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                <p className="whitespace-pre-line">
-                  <strong className="font-bold">Error!</strong> {Array.isArray(apiError) ? apiError.join('\n') : apiError}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={clearError}
-                className="text-white/80 hover:text-white transition flex-shrink-0 cursor-pointer"
-                aria-label="Dismiss error"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          )}
+          <ErrorAlert error={apiError} onDismiss={clearError} />
 
           <Input
             id="email"

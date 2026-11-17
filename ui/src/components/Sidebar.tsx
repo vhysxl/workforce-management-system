@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { NavLink } from 'react-router';
 import {
   CalendarCheck,
   Users,
@@ -8,17 +9,11 @@ import {
 import type { UserProfile } from '../stores/authStore';
 import Avatar from './Avatar';
 
-export type NavPage = 'attendance' | 'employees' | 'profile';
-
 interface SidebarProps {
-  activePage: NavPage;
-  onNavigate: (page: NavPage) => void;
   user: UserProfile | null;
 }
 
 export default function Sidebar({
-  activePage,
-  onNavigate,
   user,
 }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -69,15 +64,13 @@ export default function Sidebar({
           .filter((item) => item.show)
           .map((item) => {
             const Icon = item.icon;
-            const isActive = activePage === item.id;
 
             return (
-              <button
+              <NavLink
                 key={item.id}
-                type="button"
-                onClick={() => onNavigate(item.id)}
+                to={`/${item.id}`}
                 title={isCollapsed ? item.label : undefined}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition cursor-pointer ${
+                className={({ isActive }) => `w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition cursor-pointer ${
                   isActive
                     ? 'bg-primary text-secondary shadow-sm'
                     : 'text-supporting hover:text-secondary hover:bg-white/5'
@@ -85,18 +78,17 @@ export default function Sidebar({
               >
                 <Icon className="w-5 h-5 flex-shrink-0" />
                 {!isCollapsed && <span className="truncate">{item.label}</span>}
-              </button>
+              </NavLink>
             );
           })}
       </nav>
 
       <div className="p-3 border-t border-white/5">
-        <button
-          type="button"
-          onClick={() => onNavigate('profile')}
+        <NavLink
+          to="/profile"
           title={isCollapsed ? displayName : undefined}
-          className={`w-full flex items-center gap-3 p-2.5 rounded-lg text-left transition cursor-pointer ${
-            activePage === 'profile'
+          className={({ isActive }) => `w-full flex items-center gap-3 p-2.5 rounded-lg text-left transition cursor-pointer ${
+            isActive
               ? 'bg-primary text-secondary shadow-sm'
               : 'text-supporting hover:text-secondary hover:bg-white/5'
           } ${isCollapsed ? 'justify-center' : ''}`}
@@ -112,7 +104,7 @@ export default function Sidebar({
               </p>
             </div>
           )}
-        </button>
+        </NavLink>
       </div>
     </aside>
   );

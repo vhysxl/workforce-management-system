@@ -1,22 +1,20 @@
-import { useState } from 'react';
-import Sidebar, { type NavPage } from '../components/Sidebar';
+import { useEffect } from 'react';
+import { Outlet, useLocation } from 'react-router';
+import Sidebar from '../components/Sidebar';
 import { useAuthStore } from '../stores/authStore';
-import AttendancePage from './AttendancePage';
-import EmployeesPage from './EmployeesPage';
-import ProfilePage from './ProfilePage';
 
 export default function HomePage() {
   const user = useAuthStore((state) => state.user);
-  const [activePage, setActivePage] = useState<NavPage>(user?.role === 'admin' ? 'employees' : 'attendance');
+  const { pathname } = useLocation();
+
+  useEffect(() => window.scrollTo(0, 0), [pathname]);
 
   return (
     <div className="flex min-h-screen bg-primary text-secondary">
-      <Sidebar activePage={activePage} onNavigate={setActivePage} user={user} />
+      <Sidebar user={user} />
       <main className="flex-1 min-w-0 p-8 overflow-y-auto">
         <div className="max-w-4xl mx-auto space-y-6">
-          {activePage === 'attendance' && <AttendancePage />}
-          {activePage === 'employees' && <EmployeesPage />}
-          {activePage === 'profile' && <ProfilePage />}
+          <Outlet />
         </div>
       </main>
     </div>
