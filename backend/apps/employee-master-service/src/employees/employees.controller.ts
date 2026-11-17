@@ -27,8 +27,11 @@ export class EmployeesController {
 
   @Post()
   @Roles([EmployeeRole.ADMIN, EmployeeRole.HRD])
-  create(@Body() createEmployeeDto: CreateEmployeeDto) {
-    return this.employeesService.create(createEmployeeDto);
+  create(
+    @Body() createEmployeeDto: CreateEmployeeDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.employeesService.create(createEmployeeDto, request.user.role);
   }
 
   @Get()

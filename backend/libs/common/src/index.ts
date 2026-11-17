@@ -9,3 +9,4 @@ export * from './decorators/to-indonesian-phone-number.decorator.js';
 export * from './decorators/to-lower-case.decorator.js';
 export * from './guards/jwt-auth.guard.js';
 export * from './guards/roles.guard.js';
+export * from './helpers/employee-role.helper.js';

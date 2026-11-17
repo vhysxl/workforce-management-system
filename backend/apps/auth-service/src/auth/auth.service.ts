@@ -11,7 +11,12 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { ActivationTokenPurpose, ERROR_MESSAGES } from '@app/common';
+import {
+  ActivationTokenPurpose,
+  ERROR_MESSAGES,
+  EmployeeRole,
+  canManageEmployeeRole,
+} from '@app/common';
 import * as argon2 from 'argon2';
 import type { StringValue } from 'ms';
 import { createHash, randomBytes } from 'node:crypto';
@@ -311,19 +316,23 @@ export class AuthService {
 
   async issueActivationToken(
     dto: IssueTokenDto,
+    actorRole: EmployeeRole,
   ): Promise<{ raw_token: string }> {
     return this.issueToken(
       dto.employee_id,
       ActivationTokenPurpose.ACTIVATION_ACCOUNT,
+      actorRole,
     );
   }
 
   async issueResetPasswordToken(
     dto: IssueTokenDto,
+    actorRole: EmployeeRole,
   ): Promise<{ raw_token: string }> {
     return this.issueToken(
       dto.employee_id,
       ActivationTokenPurpose.RESET_PASSWORD,
+      actorRole,
     );
   }
 
@@ -428,6 +437,7 @@ export class AuthService {
   private async issueToken(
     employeeId: string,
     purpose: ActivationTokenPurpose,
+    actorRole: EmployeeRole,
   ): Promise<{ raw_token: string }> {
     return this.credentialRepository.manager.transaction(async (manager) => {
       const credential = await manager.findOne(EmployeeAuthCredential, {
@@ -437,6 +447,10 @@ export class AuthService {
 
       if (!credential) {
         throw new NotFoundException(ERROR_MESSAGES.EMPLOYEE.NOT_FOUND);
+      }
+
+      if (!canManageEmployeeRole(actorRole, credential.role)) {
+        throw new ForbiddenException(ERROR_MESSAGES.AUTH.INSUFFICIENT_ROLE);
       }
 
       if (

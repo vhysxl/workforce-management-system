@@ -8,6 +8,7 @@ import {
   HttpStatus,
   Post,
   Query,
+  Req,
   Res,
   UnauthorizedException,
   UseGuards,
@@ -21,6 +22,7 @@ import {
   Roles,
   RolesGuard,
 } from '@app/common';
+import type { AuthenticatedRequest } from '@app/common';
 
 import { AUTH_CONSTANTS } from './auth.constants.js';
 import { AuthService } from './auth.service.js';
@@ -128,16 +130,22 @@ export class AuthController {
   @Post('issue-activation-token')
   @UseGuards(JwtGuard, RolesGuard)
   @Roles([EmployeeRole.ADMIN, EmployeeRole.HRD])
-  issueActivationToken(@Body() dto: IssueTokenDto) {
-    return this.authService.issueActivationToken(dto);
+  issueActivationToken(
+    @Body() dto: IssueTokenDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.authService.issueActivationToken(dto, request.user.role);
   }
 
   @HttpCode(HttpStatus.OK)
   @Post('issue-reset-password-token')
   @UseGuards(JwtGuard, RolesGuard)
   @Roles([EmployeeRole.ADMIN, EmployeeRole.HRD])
-  issueResetPasswordToken(@Body() dto: IssueTokenDto) {
-    return this.authService.issueResetPasswordToken(dto);
+  issueResetPasswordToken(
+    @Body() dto: IssueTokenDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.authService.issueResetPasswordToken(dto, request.user.role);
   }
 
   private setRefreshCookie(
