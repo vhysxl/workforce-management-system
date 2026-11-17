@@ -1,4 +1,8 @@
 export default () => ({
+  JWT_SECRET: process.env.JWT_SECRET ?? 'supersecretjwtkey',
+  JWT_REFRESH_SECRET:
+    process.env.JWT_REFRESH_SECRET ?? 'supersecretrefreshjwtkey',
+
   app: {
     port: Number(
       process.env.AUTH_SERVICE_PORT ?? process.env.PORT ?? 3001,

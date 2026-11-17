@@ -1,4 +1,6 @@
 export default () => ({
+  JWT_SECRET: process.env.JWT_SECRET ?? 'supersecretjwtkey',
+
   app: {
     port: Number(
       process.env.EMPLOYEE_SERVICE_PORT ??
