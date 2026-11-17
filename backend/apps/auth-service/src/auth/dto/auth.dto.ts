@@ -1,3 +1,4 @@
+import { EmployeeRole, ToLowerCaseTrim } from '@app/common';
 import {
   IsEmail,
   IsEnum,
@@ -8,8 +9,6 @@ import {
   IsUUID,
   MaxLength,
 } from 'class-validator';
-
-import { EmployeeRole, ToLowerCaseTrim } from '@app/common';
 
 export class CheckTokenDto {
   @IsString()

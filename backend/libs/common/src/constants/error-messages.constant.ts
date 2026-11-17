@@ -8,8 +8,7 @@ export const ERROR_MESSAGES = {
     ALREADY_DEACTIVATED: 'Employee account is already deactivated',
     REGISTRATION_FAILED:
       'Failed to process employee registration. Please try again later.',
-    UPDATE_FAILED:
-      'Failed to process employee update. Please try again later.',
+    UPDATE_FAILED: 'Failed to process employee update. Please try again later.',
     DEACTIVATION_FAILED:
       'Failed to process employee deactivation. Please try again later.',
     ACTIVATION_FAILED:
@@ -27,6 +26,20 @@ export const ERROR_MESSAGES = {
     MISSING_REFRESH_TOKEN: 'Refresh token is missing',
     CREDENTIAL_ALREADY_EXISTS:
       'Credential already exists for this email or employee',
+  },
+  ATTENDANCE: {
+    ALREADY_RECORDED_TODAY: 'Attendance for today has already been recorded',
+    NOT_FOUND_TODAY:
+      'No attendance record found for today. Please clock in first.',
+    ALREADY_CLOCKED_OUT: 'You have already clocked out for today',
+    INVALID_CLOCK_OUT_TYPE: (type: string) =>
+      `Cannot clock out for attendance type: ${type}`,
+    WFH_IMAGE_REQUIRED: 'Image file is required for WFH attendance',
+    LEAVE_IMAGE_REQUIRED: (type: string) =>
+      `Image proof is required for ${type} submission`,
+    ATTACHMENT_NOT_FOUND: 'Attachment file not found',
+    ATTACHMENT_FORBIDDEN: 'You do not have permission to view this attachment',
+    INVALID_IMAGE_FILE: 'Only image files (JPG, JPEG, PNG, WEBP) are allowed',
   },
   SERVICE: {
     UNREACHABLE: (service: string, error?: string | number) =>

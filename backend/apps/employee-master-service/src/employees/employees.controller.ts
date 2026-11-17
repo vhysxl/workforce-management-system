@@ -12,13 +12,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
-import {
-  EmployeeRole,
-  JwtGuard,
-  Roles,
-  RolesGuard,
-} from '@app/common';
+import { EmployeeRole, JwtGuard, Roles, RolesGuard } from '@app/common';
 import type { AuthenticatedRequest } from '@app/common';
+
 import { CreateEmployeeDto } from './dto/create-employee.dto.js';
 import { PaginationQueryDto } from './dto/pagination-query.dto.js';
 import { UpdateEmployeeDto } from './dto/update-employee.dto.js';
@@ -57,7 +53,11 @@ export class EmployeesController {
     @Param('id', new ParseUUIDPipe()) id: string,
     @Req() request: AuthenticatedRequest,
   ) {
-    return this.employeesService.findOne(id, request.user.role, request.user.sub);
+    return this.employeesService.findOne(
+      id,
+      request.user.role,
+      request.user.sub,
+    );
   }
 
   @Put(':id')

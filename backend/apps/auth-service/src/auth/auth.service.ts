@@ -11,15 +11,12 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 
+import { ActivationTokenPurpose, ERROR_MESSAGES } from '@app/common';
 import * as argon2 from 'argon2';
 import type { StringValue } from 'ms';
 import { createHash, randomBytes } from 'node:crypto';
 import { IsNull, Repository } from 'typeorm';
 
-import {
-  ActivationTokenPurpose,
-  ERROR_MESSAGES,
-} from '@app/common';
 import {
   ActivateAccountDto,
   CheckTokenDto,
@@ -137,11 +134,7 @@ export class AuthService {
       where: { token_hash: tokenHash },
     });
 
-    if (
-      !token ||
-      token.used_at ||
-      token.expires_at.getTime() <= Date.now()
-    ) {
+    if (!token || token.used_at || token.expires_at.getTime() <= Date.now()) {
       return { is_active: false, purpose: token?.purpose ?? null };
     }
 
@@ -250,7 +243,11 @@ export class AuthService {
       },
     });
 
-    if (!credential || !credential.refresh_token_hash || !credential.is_active) {
+    if (
+      !credential ||
+      !credential.refresh_token_hash ||
+      !credential.is_active
+    ) {
       throw new UnauthorizedException(
         ERROR_MESSAGES.AUTH.INVALID_REFRESH_TOKEN,
       );
@@ -312,14 +309,18 @@ export class AuthService {
     });
   }
 
-  async issueActivationToken(dto: IssueTokenDto): Promise<{ raw_token: string }> {
+  async issueActivationToken(
+    dto: IssueTokenDto,
+  ): Promise<{ raw_token: string }> {
     return this.issueToken(
       dto.employee_id,
       ActivationTokenPurpose.ACTIVATION_ACCOUNT,
     );
   }
 
-  async issueResetPasswordToken(dto: IssueTokenDto): Promise<{ raw_token: string }> {
+  async issueResetPasswordToken(
+    dto: IssueTokenDto,
+  ): Promise<{ raw_token: string }> {
     return this.issueToken(
       dto.employee_id,
       ActivationTokenPurpose.RESET_PASSWORD,
@@ -394,9 +395,7 @@ export class AuthService {
     });
   }
 
-  async deactivateCredential(
-    employeeId: string,
-  ): Promise<{ message: string }> {
+  async deactivateCredential(employeeId: string): Promise<{ message: string }> {
     return this.credentialRepository.manager.transaction(async (manager) => {
       const credential = await manager.findOne(EmployeeAuthCredential, {
         where: { employee_id: employeeId },
@@ -530,7 +529,9 @@ export class AuthService {
     );
   }
 
-  private signRefreshToken(credential: EmployeeAuthCredential): Promise<string> {
+  private signRefreshToken(
+    credential: EmployeeAuthCredential,
+  ): Promise<string> {
     return this.jwt.signAsync(
       {
         sub: credential.employee_id,

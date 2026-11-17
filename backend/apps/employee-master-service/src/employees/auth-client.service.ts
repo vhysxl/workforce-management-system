@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
-import { EmployeeRole, ERROR_MESSAGES } from '@app/common';
+import { ERROR_MESSAGES, EmployeeRole } from '@app/common';
 
 @Injectable()
 export class AuthClientService {

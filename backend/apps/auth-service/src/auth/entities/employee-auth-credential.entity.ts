@@ -1,3 +1,4 @@
+import { EmployeeRole } from '@app/common';
 import {
   Column,
   CreateDateColumn,
@@ -5,8 +6,6 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-
-import { EmployeeRole } from '@app/common';
 
 @Entity('employee_auth_credentials')
 export class EmployeeAuthCredential {

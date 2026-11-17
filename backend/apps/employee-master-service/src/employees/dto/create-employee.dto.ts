@@ -1,4 +1,10 @@
 import {
+  EmployeeRole,
+  ToIndonesianPhoneNumber,
+  ToLowerCaseTrim,
+  ToTitleCaseTrim,
+} from '@app/common';
+import {
   IsDateString,
   IsDefined,
   IsEmail,
@@ -13,12 +19,6 @@ import {
   MaxLength,
 } from 'class-validator';
 
-import {
-  EmployeeRole,
-  ToIndonesianPhoneNumber,
-  ToLowerCaseTrim,
-  ToTitleCaseTrim,
-} from '@app/common';
 import { MaritalStatus, Religion } from '../entities/employee.entity.js';
 
 export class CreateEmployeeDto {
