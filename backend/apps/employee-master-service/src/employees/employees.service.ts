@@ -5,12 +5,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+
+import { ERROR_MESSAGES, EmployeeRole } from '@app/common';
 import { QueryFailedError, Repository } from 'typeorm';
 
-import {
-  EmployeeRole,
-  ERROR_MESSAGES,
-} from '@app/common';
 import { AuthClientService } from './auth-client.service.js';
 import { CreateEmployeeDto } from './dto/create-employee.dto.js';
 import { PaginationQueryDto } from './dto/pagination-query.dto.js';

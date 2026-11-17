@@ -40,6 +40,9 @@
       "path": "./apps/employee-master-service/tsconfig.app.json"
     },
     {
+      "path": "./apps/attendance-service/tsconfig.app.json"
+    },
+    {
       "path": "./tsconfig.spec.json"
     }
   ]

@@ -1,3 +1,4 @@
+import { ActivationTokenPurpose } from '@app/common';
 import {
   Column,
   CreateDateColumn,
@@ -5,8 +6,6 @@ import {
   Index,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-
-import { ActivationTokenPurpose } from '@app/common';
 
 @Entity('activation_tokens')
 export class ActivationToken {
