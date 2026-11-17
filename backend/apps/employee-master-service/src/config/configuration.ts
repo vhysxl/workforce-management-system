@@ -1,6 +1,10 @@
 export default () => ({
   app: {
-    port: Number(process.env.PORT ?? 3002),
+    port: Number(
+      process.env.EMPLOYEE_SERVICE_PORT ??
+        process.env.EMPLOYEE_PORT ??
+        3002,
+    ),
   },
 
   database: {
@@ -8,7 +12,7 @@ export default () => ({
     port: Number(process.env.DB_PORT ?? 3306),
     username: process.env.DB_USERNAME ?? 'root',
     password: process.env.DB_PASSWORD ?? 'root',
-    name: process.env.DB_NAME ?? 'master_employee_db',
+    name: process.env.EMPLOYEE_DB_NAME ?? 'master_employee_db',
   },
 
   services: {
