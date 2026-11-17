@@ -80,8 +80,8 @@ export default function ProfilePage() {
               { label: 'Address', value: profile.address },
               { label: 'Birth place', value: profile.birth_place },
               { label: 'Birth date', value: formatDate(profile.birth_date) },
-              { label: 'Marital status', value: profile.marital_status },
-              { label: 'Religion', value: profile.religion },
+              { label: 'Marital status', value: profile.marital_status ? <span className="capitalize">{profile.marital_status}</span> : null },
+              { label: 'Religion', value: profile.religion ? <span className="capitalize">{profile.religion}</span> : null },
               { label: 'Activated', value: profile.activated_at ? formatDateTime(profile.activated_at) : '—' },
               { label: 'Account created', value: formatDateTime(profile.created_at) },
             ].map(({ label, value }) => (

@@ -14,7 +14,7 @@ const statuses = {
   wfh: { label: 'WFH Recorded', style: 'bg-blue-950/40 text-blue-400 border-blue-900/50' },
   completed: { label: 'Completed', style: 'bg-blue-950/40 text-blue-400 border-blue-900/50' },
   sick: { label: 'Sick Leave', style: 'bg-amber-950/40 text-amber-500 border-amber-900/50' },
-  personal: { label: 'On Leave', style: 'bg-amber-950/40 text-amber-500 border-amber-900/50' },
+  personal: { label: 'Personal Leave', style: 'bg-amber-950/40 text-amber-500 border-amber-900/50' },
 };
 
 const actions = {
@@ -140,8 +140,9 @@ export default function AttendancePage() {
           </div>
 
           <div className="text-center py-2">
-            <p className="text-xs text-supporting font-medium">Office Hour</p>
+            <p className="text-xs text-supporting font-medium">Work Schedule</p>
             <p className="text-3xl font-bold tracking-tight text-secondary my-1">08:00 - 17:00</p>
+            <p className="text-xs text-supporting">Regular Shift</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

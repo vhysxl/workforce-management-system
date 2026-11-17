@@ -39,8 +39,10 @@ function EmployeeDirectory({ actorRole }: { actorRole: ManagerRole }) {
 
   useEffect(() => {
     const controller = new AbortController();
-    setIsLoading(true);
-    setError(null);
+    Promise.resolve().then(() => {
+      setIsLoading(true);
+      setError(null);
+    });
     const params = new URLSearchParams({ page: String(page), limit: '10', ...statusFilters[status] });
     if (search) params.set('search', search);
     requestEmployeeApi<EmployeeListResponse>(`/employees?${params}`, { signal: controller.signal })

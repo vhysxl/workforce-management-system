@@ -25,7 +25,19 @@ function LoginRoute() {
   const { isAuthenticated, user } = useAuthStore();
   const location = useLocation();
   if (isAuthenticated) {
-    return <Navigate to={location.state?.from ?? (user?.role === 'admin' ? '/employees' : '/attendance')} replace />;
+    const defaultRoute = user?.role === 'admin' ? '/employees' : '/attendance';
+    const from = location.state?.from;
+    let target = defaultRoute;
+    if (from && from !== '/profile') {
+      if (user?.role === 'admin' && from.startsWith('/attendance')) {
+        target = '/employees';
+      } else if (user?.role === 'employee' && from.startsWith('/employees')) {
+        target = '/attendance';
+      } else {
+        target = from;
+      }
+    }
+    return <Navigate to={target} replace />;
   }
   return <AuthPage />;
 }

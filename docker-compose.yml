@@ -11,6 +11,16 @@ services:
       - employee-master-service
       - attendance-service
 
+  ui:
+    build: ./ui
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      API_GATEWAY_URL: http://gateway:8000
+    depends_on:
+      - gateway
+
   db:
     image: mysql:latest
     environment:
