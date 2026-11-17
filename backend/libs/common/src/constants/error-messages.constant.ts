@@ -28,6 +28,7 @@ export const ERROR_MESSAGES = {
       'Credential already exists for this email or employee',
   },
   ATTENDANCE: {
+    CLOCK_IN_CLOSED: 'Clock-in is only available from 07:00 until before 17:00 WIB',
     ALREADY_RECORDED_TODAY: 'Attendance for today has already been recorded',
     NOT_FOUND_TODAY:
       'No attendance record found for today. Please clock in first.',

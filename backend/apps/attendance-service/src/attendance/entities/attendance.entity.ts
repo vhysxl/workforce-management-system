@@ -8,8 +8,8 @@ import {
 } from 'typeorm';
 
 export enum LeaveType {
-  SAKIT = 'sakit',
-  IZIN = 'izin',
+  SICK = 'sick',
+  PERSONAL = 'personal',
 }
 
 export enum WorkType {

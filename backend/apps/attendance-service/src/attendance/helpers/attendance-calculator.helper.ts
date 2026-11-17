@@ -22,8 +22,8 @@ export interface AttendanceResponse {
   updated_at: Date;
 }
 
-const OFFICE_START_TOTAL_MINUTES = 8 * 60; // jam 8 pagi
-const OFFICE_END_TOTAL_MINUTES = 17 * 60; // jam 17 sore
+const OFFICE_START_TOTAL_MINUTES = 8 * 60;
+export const OFFICE_END_TOTAL_MINUTES = 17 * 60;
 
 function minutesAfter(time: Date | null, thresholdMinutes: number): number {
   if (!time) return 0;
