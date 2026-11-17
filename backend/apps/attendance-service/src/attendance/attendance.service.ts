@@ -19,8 +19,11 @@ import { CreateLeaveDto } from './dto/create-leave.dto.js';
 import { Attendance, WorkType } from './entities/attendance.entity.js';
 import {
   AttendanceResponse,
+  OFFICE_END_TOTAL_MINUTES,
   formatAttendanceResponse,
 } from './helpers/attendance-calculator.helper.js';
+
+const CLOCK_IN_START_TOTAL_MINUTES = 7 * 60;
 
 @Injectable()
 export class AttendanceService {
@@ -31,7 +34,12 @@ export class AttendanceService {
   ) {}
 
   async clockInWfo(employeeId: string): Promise<AttendanceResponse> {
-    const today = this.getTodayDateString();
+    const now = new Date();
+    const minutes = now.getHours() * 60 + now.getMinutes();
+    if (minutes < CLOCK_IN_START_TOTAL_MINUTES || minutes >= OFFICE_END_TOTAL_MINUTES) {
+      throw new BadRequestException(ERROR_MESSAGES.ATTENDANCE.CLOCK_IN_CLOSED);
+    }
+    const today = this.getTodayDateString(now);
 
     const existing = await this.attendanceRepository.findOne({
       where: { employee_id: employeeId, date: today },
@@ -43,7 +51,6 @@ export class AttendanceService {
       );
     }
 
-    const now = new Date();
     const attendance = this.attendanceRepository.create({
       employee_id: employeeId,
       date: today,
@@ -99,7 +106,13 @@ export class AttendanceService {
       );
     }
 
-    const today = this.getTodayDateString();
+    const now = new Date();
+    const minutes = now.getHours() * 60 + now.getMinutes();
+    if (minutes < CLOCK_IN_START_TOTAL_MINUTES || minutes >= OFFICE_END_TOTAL_MINUTES) {
+      this.cleanUpUploadedFile(file.path);
+      throw new BadRequestException(ERROR_MESSAGES.ATTENDANCE.CLOCK_IN_CLOSED);
+    }
+    const today = this.getTodayDateString(now);
 
     const existing = await this.attendanceRepository.findOne({
       where: { employee_id: employeeId, date: today },
@@ -113,7 +126,6 @@ export class AttendanceService {
     }
 
     const attendanceId = parse(file.filename).name;
-    const now = new Date();
 
     const attendance = this.attendanceRepository.create({
       id: attendanceId,

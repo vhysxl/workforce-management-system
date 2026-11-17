@@ -48,6 +48,7 @@ services:
     command: ["node", "dist/apps/attendance-service/main.js"]
     environment:
       DB_HOST: db
+      TZ: Asia/Jakarta
     volumes:
       - attendance_uploads:/app/uploads/attendance
     depends_on:
