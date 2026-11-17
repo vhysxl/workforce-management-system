@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { ERROR_MESSAGES, EmployeeRole } from '@app/common';
+import { ERROR_MESSAGES, EmployeeRole, canManageEmployeeRole } from '@app/common';
 import { QueryFailedError, Repository } from 'typeorm';
 
 import { AuthClientService } from './auth-client.service.js';
@@ -23,7 +23,11 @@ export class EmployeesService {
     private readonly authClient: AuthClientService,
   ) {}
 
-  async create(dto: CreateEmployeeDto) {
+  async create(dto: CreateEmployeeDto, actorRole: EmployeeRole) {
+    if (!canManageEmployeeRole(actorRole, dto.role)) {
+      throw new ForbiddenException(ERROR_MESSAGES.AUTH.INSUFFICIENT_ROLE);
+    }
+
     try {
       return await this.employeesRepository.manager.transaction(
         async (manager) => {
@@ -168,16 +172,11 @@ export class EmployeesService {
             );
           }
 
-          const allowedRoles =
-            actorRole === EmployeeRole.ADMIN
-              ? [EmployeeRole.HRD, EmployeeRole.EMPLOYEE]
-              : [EmployeeRole.EMPLOYEE];
-
           const targetRole = dto.role ?? employee.role;
 
           if (
-            !allowedRoles.includes(employee.role) ||
-            !allowedRoles.includes(targetRole)
+            !canManageEmployeeRole(actorRole, employee.role) ||
+            !canManageEmployeeRole(actorRole, targetRole)
           ) {
             throw new ForbiddenException(ERROR_MESSAGES.AUTH.INSUFFICIENT_ROLE);
           }
@@ -245,12 +244,7 @@ export class EmployeesService {
           throw new NotFoundException(ERROR_MESSAGES.EMPLOYEE.NOT_FOUND);
         }
 
-        const allowedRoles =
-          actorRole === EmployeeRole.ADMIN
-            ? [EmployeeRole.HRD, EmployeeRole.EMPLOYEE]
-            : [EmployeeRole.EMPLOYEE];
-
-        if (!allowedRoles.includes(employee.role)) {
+        if (!canManageEmployeeRole(actorRole, employee.role)) {
           throw new ForbiddenException(ERROR_MESSAGES.AUTH.INSUFFICIENT_ROLE);
         }
 
